@@ -61,6 +61,7 @@ def image_get_spectra(results, temp, image_in, axis=0, thr_hi=None, thr_low=None
     else:
         other_axis = 1
 
+    # static type casting, due to overflow possibility...
     if temp["current_entry"] == 0:
         if temp["image_dtype"].name.find('int') !=-1:
             results["spectra"] = np.empty((results['n_entries'], temp["image_shape"][other_axis]), dtype=np.int64) 
@@ -507,17 +508,11 @@ class AnalysisProcessor(object):
         self.datasetname_main = "/Configure:0000/Run:0000/CalibCycle:0000/"     
         main_dataset = hf[self.datasetname_main + self.dataset_name]
         dataset = main_dataset["image"]
-        print dataset
         tags_list = 1e6 * main_dataset["time"]["seconds"].astype(long) + main_dataset["time"]["fiducials"]
-        #try:
-        #    tags_list = hf[self.run + "/event_info/tag_number_list"].value.tolist()
-        #except:
-        #    print sys.exc_info()
-
+        
         tags_mask = None
         dataset_indexes = np.arange(dataset.shape[0])
         if tags is not None:
-            #tags_list = np.intersect1d(tags.astype(int), tags_list, assume_unique=True)
             tags_mask = np.in1d(tags, tags_list, assume_unique=True)
             tags_list = dataset_indexes[tags_mask]
             
@@ -537,41 +532,18 @@ class AnalysisProcessor(object):
 
             # here do the bunch load on tags_list
             chunk_size = 100
-            # first loop to determine the image size... probably it can be done differently
-            #for tag in tags_list[0:n_images]:
-            #    if tags is not None:                
-            #        if tag not in tags:
-            #            continue
-            #    try:
-            #        image = dataset["tag_" + str(tag) + "/detector_data"][:]
-            #        analysis.temp_arguments["image_shape"] = image.shape
-            #        analysis.temp_arguments["image_dtype"] = image.dtype
-            #        break
-            #    except:
-            #        print sys.exc_info()
-            #        pass
             analysis.temp_arguments["image_shape"] = dataset[0].shape
             analysis.temp_arguments["image_dtype"] = dataset[0].dtype
         # loop on tags
         images_iter = images_iterator(dataset, chunk_size, tags_mask)
-        #for image in 
-        #for tag_i, tag in enumerate(tags_list[0:n_images]):
         for image_i, image in enumerate(images_iter):
-            #try:
-            #    image = dataset["tag_" + str(tag) + "/detector_data"][:]
+            print image_i
+            if image_i >= n_images:
+                break
+            
             if self.f_for_all_images != {}:
                  for k in self.preprocess_list:
                      image = self.f_for_all_images[k]['f'](image, **self.f_for_all_images[k]['args'])
-            #except KeyError:
-            #    image = None
-            #    print tag
-            #    pass
-            #except:
-            #    # when an image does not exist, a Nan (not a number) is returned. What to
-            #    # do with this depends on the analysis function itself
-            #    image = None
-            #    print sys.exc_info()
-            #    pass
 
             if image is not None and analysis.temp_arguments["image_shape"] is not None:
                 analysis.temp_arguments["image_shape"] = image.shape
