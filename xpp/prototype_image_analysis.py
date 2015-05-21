@@ -13,7 +13,7 @@ from time import time
 import pandas as pd
 
 
-fname = "/home/sala/Work/Data/SwissFEL/TestData/XPP/FEE_Spectrometer/xppc0114-r0270.h5"
+
     #fname = "/media/sala/Elements/Data/SwissFEL/TestData/XPP/FEE_Spectrometer/xppc0114-r0270.h5"
     
 #f = h5py.File(fname, "r")
@@ -120,7 +120,7 @@ def dset_loop_chunk_numba(dset, entries, chunk_size=100):
 # 
 
 def test(test_n=0):
-    entries=1000
+    entries=100
     if entries == -1 or entries > fee.shape[0]:
         entries = fee.shape[0]
 
@@ -181,20 +181,20 @@ if __name__ == "__main__":
     main_dsetname = "/Configure:0000/Run:0000/CalibCycle:0000/"
     # Name of OPAL and FEE datasets
     #opal_name = "Camera::FrameV1/XppEndstation.0:Opal1000.0"
-    #fee_name = "Camera::FrameV1/XrayTransportDiagnostic.0:Opal1000.0"
-    
+    fee_name = "Camera::FrameV1/XrayTransportDiagnostic.0:Opal1000.0"
+    fname = "/home/sala/Work/Data/SwissFEL/TestData/XPP/FEE_Spectrometer/xppc0114-r0270.h5"
     results = {}
     for it in range(5):
         for run in range(6):
-            for events in [100, 200, 300, 400, 500, 750, 1000, 1500]:
+            for events in [100]: #, 200, 300, 400, 500, 750, 1000, 1500]:
                 #fname = "/media/sala/Elements/Data/gauss_%dx%d.h5" % (events, events)
-                fname = "/home/sala/Work/Data/gauss_%dx%d.h5" % (events, events)
-                print fname
+                #fname = "/home/sala/Work/Data/gauss_%dx%d.h5" % (events, events)
+                #print fname
                 f = h5py.File(fname, "r")
                 #main_dset = f[main_dsetname]    
                 #fee_t = main_dset[fee_name]["time"]
-                #fee = main_dset[fee_name]["image"]
-                fee = f["mydata"]
+                fee = f[main_dsetname + fee_name]["image"]
+                #sfee = f["mydata"]
                 print fee.dtype, fee.shape
                 print
                 print "### n events:", run, events
@@ -203,14 +203,14 @@ if __name__ == "__main__":
                 for k, v in tmp_res.iteritems():
                     if results.has_key(k):
                         results[k].append(v[0])
-                        results["pixels"].append(events)
+                        #results["pixels"].append(events)
                     else:
                         results[k] = v
-                        results["pixels"] = [events]
+                        #results["pixels"] = [events]
                         
                 
             f.close()
-    df = pd.DataFrame(results).set_index("pixels")
+    df = pd.DataFrame(results) #.set_index("pixels")
     #df.plot(marker="o")
 
 #plt.figure()
