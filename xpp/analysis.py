@@ -537,7 +537,6 @@ class AnalysisProcessor(object):
         # loop on tags
         images_iter = images_iterator(dataset, chunk_size, tags_mask)
         for image_i, image in enumerate(images_iter):
-            print image_i
             if image_i >= n_images:
                 break
             

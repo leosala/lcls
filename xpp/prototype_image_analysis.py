@@ -182,35 +182,41 @@ if __name__ == "__main__":
     # Name of OPAL and FEE datasets
     #opal_name = "Camera::FrameV1/XppEndstation.0:Opal1000.0"
     fee_name = "Camera::FrameV1/XrayTransportDiagnostic.0:Opal1000.0"
-    fname = "/home/sala/Work/Data/SwissFEL/TestData/XPP/FEE_Spectrometer/xppc0114-r0270.h5"
+    #fname = "/home/sala/Work/Data/SwissFEL/TestData/XPP/FEE_Spectrometer/xppc0114-r0270.h5"
     results = {}
-    for it in range(5):
+    for it in range(2):
         for run in range(6):
-            for events in [100]: #, 200, 300, 400, 500, 750, 1000, 1500]:
-                #fname = "/media/sala/Elements/Data/gauss_%dx%d.h5" % (events, events)
+            for events in [100, 200, 300, 400, 500, 750, 1000, 1500]:
+                #fname = "/home/sala/Work/Data/gauss_%dx%d.h5" % (events, events)
+                fname = "/home/sala/Work/Data/gauss_%dx%d_chunk1img_shuffle_gzip1.h5" % (events, events)
                 #fname = "/home/sala/Work/Data/gauss_%dx%d.h5" % (events, events)
                 #print fname
                 f = h5py.File(fname, "r")
                 #main_dset = f[main_dsetname]    
                 #fee_t = main_dset[fee_name]["time"]
-                fee = f[main_dsetname + fee_name]["image"]
-                #sfee = f["mydata"]
-                print fee.dtype, fee.shape
+                #fee = f[main_dsetname + fee_name]["image"]
+                fee = f["mydata"]
                 print
-                print "### n events:", run, events
+                print "### n events:", it, run, events
+                print fee.dtype, fee.shape
                 tmp_res = test(run)
-                
+                print tmp_res
                 for k, v in tmp_res.iteritems():
+                    
                     if results.has_key(k):
                         results[k].append(v[0])
-                        #results["pixels"].append(events)
+                        if run == 0:
+                            results["pixels"].append(events)
                     else:
                         results[k] = v
-                        #results["pixels"] = [events]
-                        
+                        if run == 0:
+                            results["pixels"] = [events]
+                    
                 
-            f.close()
-    df = pd.DataFrame(results) #.set_index("pixels")
+                f.close()
+    df = pd.DataFrame(results)
+    df.to_csv("meas_gauss_%dx%d_chunk1img_shuffle_gzip1.txt" % (events, events), sep="\t") 
+    df = df.set_index("pixels")
     #df.plot(marker="o")
 
 #plt.figure()
