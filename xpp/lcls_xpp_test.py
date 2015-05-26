@@ -14,10 +14,11 @@ import xpp_utils as xpp
 
 def lcls_xpp_test(do_plot=False):
     fname = "/home/sala/Work/Data/SwissFEL/TestData/XPP/FEE_Spectrometer/xppc0114-r0270.h5"
+    #fname = "/home/sala/Work/Data/SwissFEL/TestData/XPP/FEE_Spectrometer/xppc0114-r0270.h5"
     #fname = "/media/sala/Elements/Data/SwissFEL/TestData/XPP/FEE_Spectrometer/xppc0114-r0270.h5"
     
     f = h5py.File(fname, "r")
-    f_old = h5py.File("/media/sala/Elements/Data/LCLS/CXI/cxi61812-r0196.h5", "r")
+    #f_old = h5py.File("/media/sala/Elements/Data/LCLS/CXI/cxi61812-r0196.h5", "r")
     
     main_dsetname = "/Configure:0000/Run:0000/CalibCycle:0000/"
     main_dset = f[main_dsetname]

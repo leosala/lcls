@@ -21,6 +21,38 @@ def images_iterator(images, chunk_size=1, mask=None):
             yield dset[j]
 
 
+def images_iterator_cspad140(images, chunk_size=1, mask=None):
+    """Iterator over CSPAD140 images, as taken at LCLS. 
+    
+    ADD BLAH
+    """
+    
+    # where to put this geometry configurations?
+    pixel_width = 110 # in microns
+    vertical_gap_mm = 2.3 # in mm
+
+    i = 0
+    if chunk_size >= images.shape[0]:
+        chunk_size = images.shape[0]
+
+    for i in range(0, images.shape[0], chunk_size):
+        end_i = min(i + chunk_size, images.shape[0])
+        if mask is not None:
+            idx = np.arange(images.shape[0])[mask]
+            dset = images[idx[i:end_i]]
+        else:
+            dset = images[i:end_i]
+            if dset.shape[0] == 0:
+                yield None
+            vertical_gap_px_arr = np.zeros((dset.shape[0], dset.shape[2], 
+                                            int(round(vertical_gap_mm * 1.e+3 / pixel_width))))
+            print dset.T[0].T.swapaxes(1, 2).shape, vertical_gap_px_arr.shape, dset.T[1].T.swapaxes(1, 2).shape
+            images = np.concatenate((dset.T[0].T.swapaxes(1, 2), 
+                                     vertical_gap_px_arr, dset.T[1].T.swapaxes(1, 2)), axis=2)            
+        for j in range(dset.shape[0]): 
+            yield images[j]
+
+
 def rebin(a, *args):
     """
     rebin a numpy array
@@ -349,9 +381,25 @@ class AnalysisProcessor(object):
         self.flatten_results = False
         self.preprocess_list = []
         self.dataset_name = None
+        self.images_iterator = images_iterator 
 
     def __call__(self, dataset_file, n=-1, tags=None ):
         return self.analyze_images(dataset_file, n=n, tags=tags)
+
+    def set_images_iterator(self, func_name=None):
+        """"""
+        if func_name is None:
+            print "[WARNING] no images_iterator provided, doing nothing"
+            return
+        
+        #this can be done nicer, I think
+        gl_func = globals()
+        if gl_func.has_key(func_name):
+            self.images_iterator = gl_func[func_name]
+        else:
+            print sys.exc_info()
+            raise RuntimeError("Images iterator function %s does not exist!" % func_name)
+
 
     def add_preprocess(self, f, label="", args={}):
         """
@@ -507,7 +555,9 @@ class AnalysisProcessor(object):
 
         self.datasetname_main = "/Configure:0000/Run:0000/CalibCycle:0000/"     
         main_dataset = hf[self.datasetname_main + self.dataset_name]
-        dataset = main_dataset["image"]
+        print self.datasetname_main + self.dataset_name        
+        #dataset = main_dataset["image"]
+        dataset = main_dataset["data"]
         tags_list = 1e6 * main_dataset["time"]["seconds"].astype(long) + main_dataset["time"]["fiducials"]
         
         tags_mask = None
@@ -531,13 +581,13 @@ class AnalysisProcessor(object):
             analysis.temp_arguments["image_dtype"] = None
 
             # here do the bunch load on tags_list
-            chunk_size = 100
+            
             analysis.temp_arguments["image_shape"] = dataset[0].shape
             analysis.temp_arguments["image_dtype"] = dataset[0].dtype
         # loop on tags
-        images_iter = images_iterator(dataset, chunk_size, tags_mask)
+        chunk_size = 100
+        images_iter = self.images_iterator(dataset, chunk_size, tags_mask)
         for image_i, image in enumerate(images_iter):
-            print image_i
             if image_i >= n_images:
                 break
             
