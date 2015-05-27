@@ -28,6 +28,7 @@ def plot_image_and_proj(image, title=""):
     plt.tight_layout()
 
 
+run = 2
 DIR = "/home/sala/Work/Data/LCLS/"
 #fname = DIR + "cxi61812-r0196.h5"
 fname = DIR + "/LH60/xpph6015-r0002.h5"
@@ -47,11 +48,12 @@ images_mean = results["image_get_mean_std"]["images_mean"]
 h = results["image_get_histo_adu"]
 
 plot_image_and_proj(images_mean, title="CsPad #0")
+plt.savefig("run%d_cspad_0.png" % run)
 
 plt.figure()
 plt.title("CsPad 140 #0")
 plt.bar(h["histo_adu_bins"][:-1], h["histo_adu"], width=5, log=True)
-
+plt.savefig("run%d_cspad_histo_0.png" % run)
 
 dset_name = "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.1"
 ip.set_dataset(dset_main + dset_name)
@@ -60,10 +62,12 @@ results = ip.analyze_images(fname, )
 images_mean = results["image_get_mean_std"]["images_mean"]
 h = results["image_get_histo_adu"]
 plot_image_and_proj(images_mean, title="CsPad #1")
+plt.savefig("run%d_cspad_1.png" % run)
+
 plt.figure()
 plt.title("CsPad 140 #0")
 plt.bar(h["histo_adu_bins"][:-1], h["histo_adu"], width=5, log=True)
-
+plt.savefig("run%d_cspad_histo_1.png" % run)
 
 #FEE
 
@@ -72,11 +76,14 @@ opal_1 = dset_main + "/Camera::FrameV1/XppEndstation.0:Opal1000.1"
 
 ip.set_dataset(opal_0)
 ip.set_images_iterator('images_iterator')
-results_opal = ip.analyze_images(fname, n=100)
+results_opal = ip.analyze_images(fname)
 
 images_mean = results_opal["image_get_mean_std"]["images_mean"]
 h = results_opal["image_get_histo_adu"]
+plot_image_and_proj(images_mean, title="Opal #0")
+plt.savefig("run%d_opal_0.png" % run)
 
+"""
 plt.figure()
 plt.subplot(211)
 plt.title("Opal0")
@@ -86,14 +93,17 @@ plt.subplot(212)
 plt.title("Opal0")
 plt.plot(images_mean.sum(axis=0))
 plt.plot(images_mean.sum(axis=1))
+"""
 
 ip.set_dataset(opal_1)
 ip.set_images_iterator('images_iterator')
-results_opal = ip.analyze_images(fname, n=100)
+results_opal = ip.analyze_images(fname)
 
 images_mean = results_opal["image_get_mean_std"]["images_mean"]
 h = results_opal["image_get_histo_adu"]
+plot_image_and_proj(images_mean, title="Opal #1")
 
+"""
 plt.figure()
 plt.subplot(211)
 plt.title("Opal1")
@@ -103,3 +113,5 @@ plt.subplot(212)
 plt.title("Opal1")
 plt.plot(images_mean.sum(axis=0))
 plt.plot(images_mean.sum(axis=1))
+"""
+plt.savefig("run%d_opal_1.png" % run)
