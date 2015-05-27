@@ -3,6 +3,41 @@ from time import time
 import sys
 import h5py
 import pydoc
+import image_analyses as ian
+
+
+def get_dataset_tags(main_dataset):
+    if "image" in main_dataset.keys():
+        dataset = main_dataset["image"]
+    else:
+        dataset = main_dataset["data"]
+    tags_list = 1e6 * main_dataset["time"]["seconds"].astype(long) + main_dataset["time"]["fiducials"]
+    return dataset, tags_list
+
+class Analysis(object):
+    """Simple container for the analysis functions to be loaded into AnalysisProcessor. At the moment, it is only used internally inside AnalysisProcessor
+    """
+    def __init__(self, analysis_function, arguments={}, post_analysis_function=None, name=None):
+        """
+        Parameters
+        ----------
+        analysis_function: callable function
+            the main analysis function to be run on images
+        arguments: dict
+            arguments to analysis_function
+        post_analysis_function: callable function
+            function to be called only once after the analysis loop
+        """
+
+        self.function = analysis_function
+        self.post_analysis_function = post_analysis_function
+        self.arguments = arguments
+        if name is not None:
+            self.name = name
+        else:
+            self.name = self.function.__name__
+        self.temp_arguments = {}
+        self.results = {}
 
 
 def images_iterator(images, chunk_size=1, mask=None):
@@ -17,13 +52,12 @@ def images_iterator(images, chunk_size=1, mask=None):
             dset = images[idx[i:end_i]]
         else:
             dset = images[i:end_i]
-        for j in range(dset.shape[0]): 
+        for j in range(dset.shape[0]):
             yield dset[j]
 
 
 def images_iterator_cspad140(images, chunk_size=1, mask=None):
-    """Iterator over CSPAD140 images, as taken at LCLS. 
-    
+    """Iterator over CSPAD140 images, as taken at LCLS.    
     ADD BLAH
     """
     
@@ -55,274 +89,7 @@ def images_iterator_cspad140(images, chunk_size=1, mask=None):
             yield dset_glued[j]
 
 
-def rebin(a, *args):
-    """
-    rebin a numpy array
-    """
-    shape = a.shape
-    lenShape = len(shape)
-    #factor = np.asarray(shape) / np.asarray(args)
-    #print factor
-    evList = ['a.reshape('] + ['args[%d],factor[%d],' % (i, i) for i in range(lenShape)] + [')'] + ['.mean(%d)' % (i + 1) for i in range(lenShape)]
-    return eval(''.join(evList))
-
-
-def image_get_spectra(results, temp, image_in, axis=0, thr_hi=None, thr_low=None):
-    """Returns a spectra (projection) over an axis of an image. This function is to be used within an AnalysisProcessor instance.
-    
-    Parameters
-    ----------
-    results : dict
-        dictionary containing the results. This is provided by the AnalysisProcessor class
-    temp : dict
-        dictionary containing temporary variables. This is provided by the AnalysisProcessor class
-    image_in : Numpy array
-        the image. This is provided by the AnalysisProcessor class
-    axis: int, optional
-        the axis index over which the projection is taken. This is the same as array.sum(axis=axis). Default is 0
-    thr_hi: float, optional
-        Upper threshold to be applied to the image. Values higher than thr_hi will be put to 0. Default is None
-    thr_low: float, optional
-        Lower threshold to be applied to the image. Values lower than thr_low will be put to 0. Default is None
-    
-    Returns
-    -------
-    results, temp: dict
-        Dictionaries containing results and temporary variables, to be used internally by AnalysisProcessor
-    """
-    if axis == 1:
-        other_axis = 0
-    else:
-        other_axis = 1
-
-    # static type casting, due to overflow possibility...
-    if temp["current_entry"] == 0:
-        if temp["image_dtype"].name.find('int') !=-1:
-            results["spectra"] = np.empty((results['n_entries'], temp["image_shape"][other_axis]), dtype=np.int64) 
-        elif temp["image_dtype"].name.find('float') !=-1:
-            results["spectra"] = np.empty((results['n_entries'], temp["image_shape"][other_axis]), dtype=np.float64) 
-        
-    # if there is no image, return NaN
-    if image_in is None:
-        result = np.ones(temp["image_shape"][other_axis], dtype=temp["image_dtype"])
-        result[:] = np.NAN
-    else:
-        image = image_in.copy()
-        if thr_low is not None:
-            image[ image < thr_low] = 0
-        if thr_hi is not None:
-            image[ image > thr_hi] = 0
-    
-        result = np.nansum(image, axis=axis)
-
-    #if result[result > 1000] != []:
-    #    print temp['current_entry'], result[result > 1000]
-    results["spectra"][temp['current_entry']] = result
-    temp["current_entry"] += 1
-    return results, temp
-
-    
-def image_get_mean_std(results, temp, image_in, thr_hi=None, thr_low=None):
-    """Returns the average of images and their standard deviation. This function is to be used within an AnalysisProcessor instance.
-    
-    Parameters
-    ----------
-    results : dict
-        dictionary containing the results. This is provided by the AnalysisProcessor class
-    temp : dict
-        dictionary containing temporary variables. This is provided by the AnalysisProcessor class
-    image_in : Numpy array
-        the image. This is provided by the AnalysisProcessor class
-    thr_hi: float, optional
-        Upper threshold to be applied to the image. Values higher than thr_hi will be put to 0. Default is None
-    thr_low: float, optional
-        Lower threshold to be applied to the image. Values lower than thr_low will be put to 0. Default is None
-    
-    Returns
-    -------
-    results, temp: dict
-        Dictionaries containing results and temporary variables, to be used internally by AnalysisProcessor
-    """
-    if image_in is None:
-        return results, temp
-        
-    image = image_in.copy()
-    
-    if thr_low is not None:
-        image[ image < thr_low] = 0
-    if thr_hi is not None:
-        image[ image > thr_hi] = 0
-    
-    if temp["current_entry"] == 0:
-        temp["sum"] = np.array(image)
-        temp["sum2"] = np.array(image * image)
-    else:
-        temp["sum"] += image
-        temp["sum2"] += np.array(image * image)
-
-    temp["current_entry"] += 1    
-
-    return results, temp    
-    
-
-def image_get_mean_std_results(results, temp):
-    """Function to be applied to results of image_get_std_results. This function is to be used within an AnalysisProcessor instance, and it is called automatically.
-    
-    Parameters
-    ----------
-    results : dict
-        dictionary containing the results. This is provided by the AnalysisProcessor class
-    temp : dict
-        dictionary containing temporary variables. This is provided by the AnalysisProcessor class
-    
-    Returns
-    -------
-    results: dict
-        Dictionaries containing results and temporary variables, to be used internally by AnalysisProcessor. Result keys are 'images_mean' and 'images_std', which are the average and the standard deviation, respectively.
-    """
-    if not temp.has_key("sum"):
-        return results        
-
-    mean = temp["sum"] / temp["current_entry"]
-    std = (temp["sum2"] / temp["current_entry"]) - mean * mean
-    std = np.sqrt(std)
-    results["images_mean"] = mean
-    results["images_std"] = std
-    return results
-
-
-def image_get_histo_adu(results, temp, image, bins=None):
-    """Returns the total histogram of counts of images. This function is to be used within an AnalysisProcessor instance. This function can be expensive.
-    
-    Parameters
-    ----------
-    results: dict
-        dictionary containing the results. This is provided by the AnalysisProcessor class
-    temp: dict
-        dictionary containing temporary variables. This is provided by the AnalysisProcessor class
-    image: Numpy array
-        the image. This is provided by the AnalysisProcessor class
-    bins: array, optional
-        array with bin extremes        
-        
-    Returns
-    -------
-    results, temp: dict
-        Dictionaries containing results and temporary variables, to be used internally by AnalysisProcessor
-    """
-    if image is None:
-        return results, temp
-
-    if bins is None:
-        bins = np.arange(-100, 1000, 5)
-    t_histo = np.bincount(np.digitize(image.flatten(), bins[1:-1]), 
-                          minlength=len(bins) - 1)
-    
-    if temp["current_entry"] == 0:
-        results["histo_adu"] = t_histo
-        results["histo_adu_bins"] = bins
-    else:
-        results["histo_adu"] += t_histo
-
-    temp["current_entry"] += 1
-    return results, temp                  
-  
-
-def image_set_roi(image, roi=None):
-    """Returns a copy of the original image, selected by the ROI region specified
-
-    Parameters
-    ----------
-    image: Numpy array
-        the input array image
-    roi: array
-        the ROI selection, as [[X_lo, X_hi], [Y_lo, Y_hi]]
-        
-    Returns
-    -------
-    image: Numpy array
-        a copy of the original image, with ROI applied
-    """
-    if roi is not None:
-        new_image = image[roi[0][0]:roi[0][1], roi[1][0]:roi[1][1]]
-        return new_image
-    else:
-        return image
- 
- 
-def image_set_thr(image, thr_low=None, thr_hi=None, replacement_value=0):
-    """Returns a copy of the original image, with a low and an high thresholds applied
-
-    Parameters
-    ----------
-    image: Numpy array
-        the input array image
-    thr_low: int, float
-        the lower threshold
-    thr_hi: int, float
-        the higher threshold
-    replacement_value: int, float
-        the value with which values lower or higher than thresholds should be put equal to
-        
-    Returns
-    -------
-    image: Numpy array
-        a copy of the original image, with ROI applied
-    """
-    new_image = image.copy()
-    if thr_low is not None:
-        new_image[new_image < thr_low] = replacement_value
-    if thr_hi is not None:
-        new_image[new_image > thr_hi] = replacement_value
-    return new_image
-
-
-def image_subtract_image(image, sub_image):
-    """Returns a copy of the original image, after subtraction of a user-provided image (e.g. dark background)
-
-    Parameters
-    ----------
-    image: Numpy array
-        the input array image
-    image: Numpy array
-        the image to be subtracted
-
-    Returns
-    -------
-    image: Numpy array
-        a copy of the original image, with subtraction applied
-    """
-    new_image = image.copy()
-    return new_image - sub_image
-
-
-class Analysis(object):
-    """Simple container for the analysis functions to be loaded into AnalysisProcessor. At the moment, it is only used internally inside AnalysisProcessor
-    """
-    def __init__(self, analysis_function, arguments={}, post_analysis_function=None, name=None):
-        """
-        Parameters
-        ----------
-        analysis_function: callable function
-            the main analysis function to be run on images
-        arguments: dict
-            arguments to analysis_function
-        post_analysis_function: callable function
-            function to be called only once after the analysis loop
-        """
-
-        self.function = analysis_function
-        self.post_analysis_function = post_analysis_function
-        self.arguments = arguments
-        if name is not None:
-            self.name = name
-        else:
-            self.name = self.function.__name__
-        self.temp_arguments = {}
-        self.results = {}
-
-
-class AnalysisProcessor(object):
+class ImagesProcessor(object):
     """Simple class to perform analysis on SACLA datafiles. Due to the peculiar file 
     format in use at SACLA (each image is a single dataset), any kind of
     analysis must be performed as a loop over all images: due to this, I/O is
@@ -373,19 +140,19 @@ class AnalysisProcessor(object):
         self.f_for_all_images = {}
         self.analyses = []
         self.available_analyses = {}
-        self.available_analyses["image_get_histo_adu"] = (image_get_histo_adu, None)
-        self.available_analyses["image_get_mean_std"] = (image_get_mean_std, image_get_mean_std_results)
-        self.available_analyses["image_get_spectra"] = (image_get_spectra, None)
+        self.available_analyses["image_get_histo_adu"] = (ian.image_get_histo_adu, None)
+        self.available_analyses["image_get_mean_std"] = (ian.image_get_mean_std, ian.image_get_mean_std_results)
+        self.available_analyses["image_get_spectra"] = (ian.image_get_spectra, None)
         self.available_preprocess = {}
-        self.available_preprocess["image_set_roi"] = image_set_roi
-        self.available_preprocess["image_set_thr"] = image_set_thr
+        self.available_preprocess["image_set_roi"] = ian.image_set_roi
+        self.available_preprocess["image_set_thr"] = ian.image_set_thr
         self.n = -1
         self.flatten_results = False
         self.preprocess_list = []
         self.dataset_name = None
         self.images_iterator = images_iterator 
 
-    def __call__(self, dataset_file, n=-1, tags=None ):
+    def __call__(self, dataset_file, n=-1, tags=None):
         return self.analyze_images(dataset_file, n=n, tags=tags)
 
     def set_images_iterator(self, func_name=None):
@@ -555,12 +322,11 @@ class AnalysisProcessor(object):
             hf.close()
             raise RuntimeError("Please provide a dataset name using the `set_sacla_dataset` method!")
 
-        self.datasetname_main = "/Configure:0000/Run:0000/CalibCycle:0000/"     
-        main_dataset = hf[self.datasetname_main + self.dataset_name]
-        print self.datasetname_main + self.dataset_name        
-        #dataset = main_dataset["image"]
-        dataset = main_dataset["data"]
-        tags_list = 1e6 * main_dataset["time"]["seconds"].astype(long) + main_dataset["time"]["fiducials"]
+        #self.datasetname_main = "/Configure:0000/Run:0000/CalibCycle:0001/"     
+        #print self.datasetname_main + self.dataset_name        
+        main_dataset = hf[self.dataset_name]
+
+        dataset, tags_list = get_dataset_tags(main_dataset)
         
         tags_mask = None
         dataset_indexes = np.arange(dataset.shape[0])
@@ -594,8 +360,8 @@ class AnalysisProcessor(object):
                 break
             
             if self.f_for_all_images != {}:
-                 for k in self.preprocess_list:
-                     image = self.f_for_all_images[k]['f'](image, **self.f_for_all_images[k]['args'])
+                for k in self.preprocess_list:
+                    image = self.f_for_all_images[k]['f'](image, **self.f_for_all_images[k]['args'])
 
             if image is not None and analysis.temp_arguments["image_shape"] is not None:
                 analysis.temp_arguments["image_shape"] = image.shape

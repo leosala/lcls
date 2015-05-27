@@ -29,9 +29,12 @@ def compute_beam_energy(ebeam):
     
 def get_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, ):
 
+    if isinstance(quants, str):
+        quants = [quants]
     for quant in quants:
         if not quant_map.has_key(quant):
             quant_map[quant] = quant
+            print quant
             #print "[ERROR] Quantity '%s' not available" % quant
             #print "Available values are: ", quant_map.keys()
             #exit(-1)   
