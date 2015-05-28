@@ -37,7 +37,7 @@ def get_data_with_tags(fname, quant, conf_cycle=0, run_cycle=0, calib_cycle=0):
     return dset, tags
 
 
-def get_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, ):
+def get_scalar_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, ):
     if isinstance(quants, str):
         quants = [quants]
     for quant in quants:
