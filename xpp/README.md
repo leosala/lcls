@@ -79,8 +79,36 @@ Out[38]:
   'shape': (1269,)},
  u'Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/time': {'dtype': dtype([('seconds', '<u4'), ('nanoseconds', '<u4'), ('ticks', '<u4'), ('fiducials', '<u4'), ('control', '<u4'), ('vector', '<u4')]),
   'shape': (1269,)}}
+```
 
+## Printing the structure of an HDF5 file
 
+Similarly, you can also iteratively print out the structure. For example, if you want the tree up to the second level of datasets:
+
+```
+In [43]: h5u.print_leaf(f, level=1)
+/Configure:0000/Alias::ConfigV1
+/Configure:0000/Bld::BldDataEBeamV7
+/Configure:0000/Bld::BldDataFEEGasDetEnergyV1
+/Configure:0000/Bld::BldDataPhaseCavity
+/Configure:0000/Bld::BldDataSpectrometerV1
+/Configure:0000/CalibStore
+/Configure:0000/Camera::FrameFexConfigV1
+/Configure:0000/ControlData::ConfigV3
+/Configure:0000/CsPad2x2::ConfigV2
+/Configure:0000/Epics::ConfigV1
+/Configure:0000/Epics::EpicsPv
+/Configure:0000/EvrData::ConfigV7
+/Configure:0000/EvrData::IOConfigV2
+/Configure:0000/Ipimb::ConfigV2
+/Configure:0000/L3T::ConfigV1
+/Configure:0000/Lusi::IpmFexConfigV2
+/Configure:0000/Lusi::PimImageConfigV1
+/Configure:0000/Opal1k::ConfigV1
+/Configure:0000/Orca::ConfigV1
+/Configure:0000/Partition::ConfigV1
+/Configure:0000/Pulnix::TM6740ConfigV2
+/Configure:0000/Run:0000
 ```
 
 ## Getting properly tagged scalar data
