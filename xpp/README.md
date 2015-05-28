@@ -54,6 +54,35 @@ import plot_utilities as pu
 
 All the examples assume that you have loaded the modules using `%load load_defaults.py` in an ipython shell
 
+## Searching for regular expressions in an HDF5 file
+
+Using the `hdf5_utilities` module (loaded as `h5u`), you can look for regular expressions in an HDF5 file, with also a printout of the corresponding dataset info. For example:
+
+```
+In [1]: fname = "/reg/d/psdm/xpp/xpph6015/hdf5/xpph6015-r0005.h5"
+In [2]: f = h5py.File(fname, 'r')
+In [3]: h5u.search_hdf5(f, "Lusi.*XppSb3_Ipm")
+.*Lusi.*XppSb3_Ipm.*
+Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/data
+Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/_damage
+Configure:0000/Lusi::IpmFexConfigV2/XppSb3_Ipm/config
+Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/time
+Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/_mask
+Out[38]: 
+{u'Configure:0000/Lusi::IpmFexConfigV2/XppSb3_Ipm/config': {'dtype': dtype([('diode', [('base', '<f4', (16,)), ('scale', '<f4', (16,))], (4,)), ('xscale', '<f4'), ('yscale', '<f4')]),
+  'shape': ()},
+ u'Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/_damage': {'dtype': dtype([('bits', '<u4'), ('DroppedContribution', 'u1'), ('OutOfOrder', 'u1'), ('OutOfSynch', 'u1'), ('UserDefined', 'u1'), ('IncompleteContribution', 'u1'), ('userBits', 'u1')]),
+  'shape': (1269,)},
+ u'Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/_mask': {'dtype': dtype('uint8'),
+  'shape': (1269,)},
+ u'Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/data': {'dtype': dtype([('channel', '<f4', (4,)), ('sum', '<f4'), ('xpos', '<f4'), ('ypos', '<f4')]),
+  'shape': (1269,)},
+ u'Configure:0000/Run:0000/CalibCycle:0000/Lusi::IpmFexV1/XppSb3_Ipm/time': {'dtype': dtype([('seconds', '<u4'), ('nanoseconds', '<u4'), ('ticks', '<u4'), ('fiducials', '<u4'), ('control', '<u4'), ('vector', '<u4')]),
+  'shape': (1269,)}}
+
+
+```
+
 ## Getting properly tagged scalar data
 
 In order to properly correlate data, you should take care of pulse-ids (or _tags_). For scalar data, we can use the `get_scalar_data` routine provided by the `xpp` module: this will create a Pandas dataframe, taking care of properly correlate data. 
