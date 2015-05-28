@@ -30,23 +30,27 @@ All the examples assume that you have loaded the modules using `%load load_defau
 
 ## Getting properly tagged scalar data
 
+In order to properly correlate data, you should take care of pulse-ids (or _tags_). For scalar data, we can use the `get_scalar_data` routine provided by the `xpp` module: this will create a Pandas dataframe, taking care of properly correlate data. 
+
+First, we load the defaults and set up file and datasets names:
 ```
 In [1]: %load load_defaults.py
-
 In [3]: fname = "/reg/d/psdm/xpp/xpph6015/hdf5/xpph6015-r0005.h5"
-
 In [4]: ipm2 = "Lusi::IpmFexV1/XppSb2_Ipm"
-
 In [5]: ipm3 = "Lusi::IpmFexV1/XppSb3_Ipm"
+```
 
+Then, we retrieve the data. As can be seen, a limitation is that only scalar (i.e. one value per tag) data can be retrieved in this way:
+```
 In [7]: df = xpp.get_data(fname, [ipm2, ipm3])
 Lusi::IpmFexV1/XppSb2_Ipm
 Lusi::IpmFexV1/XppSb3_Ipm
-.*Lusi::IpmFexV1/XppSb2_Ipm.*
 [WARNING] Dataset Lusi::IpmFexV1/XppSb2_Ipm/channel cannot be loaded, as it is not a scalar dataset
-.*Lusi::IpmFexV1/XppSb3_Ipm.*
 [WARNING] Dataset Lusi::IpmFexV1/XppSb3_Ipm/channel cannot be loaded, as it is not a scalar dataset
+```
 
+If we do have a look at the first entries, we can see that they are indexed by tags:
+```
 In [8]: df.head()
 Out[8]: 
                   Lusi::IpmFexV1/XppSb2_Ipm.sum  \
@@ -57,21 +61,7 @@ tags
 1432749224067761                      -0.000689   
 1432749224067764                      -0.000079   
 
-                  Lusi::IpmFexV1/XppSb2_Ipm.xpos  \
-tags                                               
-1432749224067752                       -0.689906   
-1432749224067755                        4.050360   
-1432749224067758                        1.487535   
-1432749224067761                        0.302412   
-1432749224067764                        1.568835   
-
-                  Lusi::IpmFexV1/XppSb2_Ipm.ypos  fiducials          time  \
-tags                                                                        
-1432749224067752                        0.390110      67752  1.432751e+09   
-1432749224067755                        1.940678      67755  1.432751e+09   
-1432749224067758                       -0.078358      67758  1.432751e+09   
-1432749224067761                        0.390110      67761  1.432751e+09   
-1432749224067764                       -0.075916      67764  1.432751e+09   
+[...]
 
                   Lusi::IpmFexV1/XppSb3_Ipm.sum  \
 tags                                              
@@ -80,23 +70,10 @@ tags
 1432749224067758                      -0.000871   
 1432749224067761                      -0.000948   
 1432749224067764                       0.000044   
+```
 
-                  Lusi::IpmFexV1/XppSb3_Ipm.xpos  \
-tags                                               
-1432749224067752                        0.756364   
-1432749224067755                        0.756364   
-1432749224067758                        0.756364   
-1432749224067761                        0.756364   
-1432749224067764                       -3.188571   
-
-                  Lusi::IpmFexV1/XppSb3_Ipm.ypos  
-tags                                              
-1432749224067752                        0.069364  
-1432749224067755                        0.069364  
-1432749224067758                        0.250000  
-1432749224067761                        0.069364  
-1432749224067764                        1.534247  
-
+Then, using the Pandas plotting utilities, we can easily create e.g. a correlation plot:
+```
 In [9]: df.plot(kind="scatter", x="Lusi::IpmFexV1/XppSb3_Ipm.sum", y="Lusi::IpmFexV1/XppSb2_Ipm.sum")
 Out[9]: <matplotlib.axes._subplots.AxesSubplot at 0x2abc35c1a3d0>
 
