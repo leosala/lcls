@@ -31,6 +31,22 @@ user@hostname:~/Programs/git/lcls$ ipython
 Python 2.7.9 |Anaconda 2.2.0 (64-bit)| (default, Apr 14 2015, 12:54:25) 
 
 In [1]: %load load_defaults.py
+In [2]: # %load load_defaults.py
+import h5py
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+import sys
+import os
+XPP_LIB = "utilities/"
+sys.path.append(os.getcwd() + "/" + XPP_LIB)
+
+import hdf5_utilities as h5u
+from images_processor import ImagesProcessor
+import xpp_utilities as xpp
+import plot_utilities as pu
+
 ```
 
 
