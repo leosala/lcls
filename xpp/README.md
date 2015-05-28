@@ -81,6 +81,35 @@ In [10]: plt.show()
 ```
 ![example tagged image](https://cloud.githubusercontent.com/assets/4245111/7851213/e4a12d2a-04a0-11e5-8aa4-67c927a17257.png)
 
+## Get generic tagged data
+
+If you need to retrieve vectors or images, you can just use the `xpp.get_data_with_tags` routine. It will return two arrays: one with the data, one with the tags.
+
+In the following example, we will retrieve the data from a tile of the CsPad140k, and then select only certain tags. As before, we start with the standard loadings:
+
+```
+In [1]: %load load_defaults.py
+In [2]: fname = "/reg/d/psdm/xpp/xpph6015/hdf5/xpph6015-r0005.h5"
+In [3]: cspad0_name = "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.0/data"
+```
+
+Then, we get the data and the tags:
+
+```
+In [4]: cspad0_data, cspad0_tags = xpp.get_data_with_tags(fname, cspad0_name)
+In [5]: print cspad0_data.shape, cspad0_data[0].shape, cspad0_tags.shape
+(1269,) (185, 388, 2) (1269,)
+```
+
+If we want for example select only certain tags, we can create a boolean mask, and then apply it to the data array:
+
+```
+In [6]: mask = (cspad0_tags > 1432749224067764) * (cspad0_tags < 1432749224067800)
+In [7]: sel_data = cspad0_data[mask]
+In [8]: print sel_data.shape
+(11, 185, 388, 2)
+```
+
 # Description of examples
 
 ## plot_cspad_tile.py
