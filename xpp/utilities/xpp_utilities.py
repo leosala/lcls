@@ -33,10 +33,10 @@ def get_data_with_tags(fname, quant, conf_cycle=0, run_cycle=0, calib_cycle=0):
     f = h5py.File(fname, 'r')
     main_dsetname = "/Configure:%04d/Run:%04d/CalibCycle:%04d/" % (conf_cycle, run_cycle, calib_cycle)
     dset = f[main_dsetname + quant]
-    print main_dsetname + quant
     tags = 1e6 * dset.parent['time']["seconds"].astype(long) + dset.parent['time']["fiducials"]
     return dset, tags
-    
+
+
 def get_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, ):
     if isinstance(quants, str):
         quants = [quants]
@@ -80,6 +80,9 @@ def get_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, ):
             pd_dict[quant] = dset_data
         else:
             for field in dset_data.dtype.fields:
+                if len(dset_data[field].shape) != 1:
+                    print "[WARNING] Dataset %s cannot be loaded, as it is not a scalar dataset" % ("/".join((quant, field)))
+                    continue
                 pd_dict[quant + "." + field] = dset_data[field]
     
         # special cases
