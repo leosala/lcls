@@ -23,6 +23,16 @@ plus some custom designed utilities, as:
 * `hdf5_utilities` (as h5u), which contains the `search_hdf5` function (to search for datasets)
 * `ImagesProcessor`, which contains utilities to analyse and filter images
 
+A typical environment setup can be obtained by doing:
+
+```
+user@hostname:~/Programs/git/lcls$ source start_xpp_env.sh
+user@hostname:~/Programs/git/lcls$ ipython
+Python 2.7.9 |Anaconda 2.2.0 (64-bit)| (default, Apr 14 2015, 12:54:25) 
+
+In [1]: %load load_defaults.py
+```
+
 
 # Usage example
 
@@ -35,14 +45,14 @@ In order to properly correlate data, you should take care of pulse-ids (or _tags
 First, we load the defaults and set up file and datasets names:
 ```
 In [1]: %load load_defaults.py
-In [3]: fname = "/reg/d/psdm/xpp/xpph6015/hdf5/xpph6015-r0005.h5"
-In [4]: ipm2 = "Lusi::IpmFexV1/XppSb2_Ipm"
-In [5]: ipm3 = "Lusi::IpmFexV1/XppSb3_Ipm"
+In [2]: fname = "/reg/d/psdm/xpp/xpph6015/hdf5/xpph6015-r0005.h5"
+In [3]: ipm2 = "Lusi::IpmFexV1/XppSb2_Ipm"
+In [4]: ipm3 = "Lusi::IpmFexV1/XppSb3_Ipm"
 ```
 
 Then, we retrieve the data. As can be seen, a limitation is that only scalar (i.e. one value per tag) data can be retrieved in this way:
 ```
-In [7]: df = xpp.get_data(fname, [ipm2, ipm3])
+In [5]: df = xpp.get_data(fname, [ipm2, ipm3])
 Lusi::IpmFexV1/XppSb2_Ipm
 Lusi::IpmFexV1/XppSb3_Ipm
 [WARNING] Dataset Lusi::IpmFexV1/XppSb2_Ipm/channel cannot be loaded, as it is not a scalar dataset
@@ -50,9 +60,10 @@ Lusi::IpmFexV1/XppSb3_Ipm
 ```
 
 If we do have a look at the first entries, we can see that they are indexed by tags:
+
 ```
-In [8]: df.head()
-Out[8]: 
+In [6]: df.head()
+Out[7]: 
                   Lusi::IpmFexV1/XppSb2_Ipm.sum  \
 tags                                              
 1432749224067752                       0.000455   
@@ -74,10 +85,10 @@ tags
 
 Then, using the Pandas plotting utilities, we can easily create e.g. a correlation plot:
 ```
-In [9]: df.plot(kind="scatter", x="Lusi::IpmFexV1/XppSb3_Ipm.sum", y="Lusi::IpmFexV1/XppSb2_Ipm.sum")
-Out[9]: <matplotlib.axes._subplots.AxesSubplot at 0x2abc35c1a3d0>
+In [8]: df.plot(kind="scatter", x="Lusi::IpmFexV1/XppSb3_Ipm.sum", y="Lusi::IpmFexV1/XppSb2_Ipm.sum")
+Out[8]: <matplotlib.axes._subplots.AxesSubplot at 0x2abc35c1a3d0>
 
-In [10]: plt.show()
+In [9]: plt.show()
 ```
 ![example tagged image](https://cloud.githubusercontent.com/assets/4245111/7851213/e4a12d2a-04a0-11e5-8aa4-67c927a17257.png)
 
