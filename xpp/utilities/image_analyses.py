@@ -5,19 +5,7 @@ import h5py
 import pydoc
 
 
-def rebin(a, *args):
-    """
-    rebin a numpy array
-    """
-    shape = a.shape
-    lenShape = len(shape)
-    #factor = np.asarray(shape) / np.asarray(args)
-    #print factor
-    evList = ['a.reshape('] + ['args[%d],factor[%d],' % (i, i) for i in range(lenShape)] + [')'] + ['.mean(%d)' % (i + 1) for i in range(lenShape)]
-    return eval(''.join(evList))
-
-
-def image_get_spectra(results, temp, image_in, axis=0, thr_hi=None, thr_low=None):
+def get_projection(results, temp, image_in, axis=0, thr_hi=None, thr_low=None):
     """Returns a spectra (projection) over an axis of an image. This function is to be used within an AnalysisProcessor instance.
     
     Parameters
@@ -51,7 +39,7 @@ def image_get_spectra(results, temp, image_in, axis=0, thr_hi=None, thr_low=None
             results["spectra"] = np.empty((results['n_entries'], temp["image_shape"][other_axis]), dtype=np.int64) 
         elif temp["image_dtype"].name.find('float') !=-1:
             results["spectra"] = np.empty((results['n_entries'], temp["image_shape"][other_axis]), dtype=np.float64) 
-        
+        print results["spectra"].shape, axis, other_axis, temp["image_shape"]
     # if there is no image, return NaN
     if image_in is None:
         result = np.ones(temp["image_shape"][other_axis], dtype=temp["image_dtype"])
@@ -59,9 +47,9 @@ def image_get_spectra(results, temp, image_in, axis=0, thr_hi=None, thr_low=None
     else:
         image = image_in.copy()
         if thr_low is not None:
-            image[ image < thr_low] = 0
+            image[image < thr_low] = 0
         if thr_hi is not None:
-            image[ image > thr_hi] = 0
+            image[image > thr_hi] = 0
     
         result = np.nansum(image, axis=axis)
 
@@ -72,7 +60,7 @@ def image_get_spectra(results, temp, image_in, axis=0, thr_hi=None, thr_low=None
     return results, temp
 
     
-def image_get_mean_std(results, temp, image_in, thr_hi=None, thr_low=None):
+def get_mean_std(results, temp, image_in, thr_hi=None, thr_low=None):
     """Returns the average of images and their standard deviation. This function is to be used within an AnalysisProcessor instance.
     
     Parameters
@@ -115,7 +103,7 @@ def image_get_mean_std(results, temp, image_in, thr_hi=None, thr_low=None):
     return results, temp    
     
 
-def image_get_mean_std_results(results, temp):
+def get_mean_std_results(results, temp):
     """Function to be applied to results of image_get_std_results. This function is to be used within an AnalysisProcessor instance, and it is called automatically.
     
     Parameters
@@ -141,7 +129,7 @@ def image_get_mean_std_results(results, temp):
     return results
 
 
-def image_get_histo_adu(results, temp, image, bins=None):
+def get_histo_counts(results, temp, image, bins=None):
     """Returns the total histogram of counts of images. This function is to be used within an AnalysisProcessor instance. This function can be expensive.
     
     Parameters
@@ -169,16 +157,16 @@ def image_get_histo_adu(results, temp, image, bins=None):
                           minlength=len(bins) - 1)
     
     if temp["current_entry"] == 0:
-        results["histo_adu"] = t_histo
-        results["histo_adu_bins"] = bins
+        results["histo_counts"] = t_histo
+        results["histo_bins"] = bins
     else:
-        results["histo_adu"] += t_histo
+        results["histo_counts"] += t_histo
 
     temp["current_entry"] += 1
     return results, temp                  
   
 
-def image_set_roi(image, roi=None):
+def set_roi(image, roi=None):
     """Returns a copy of the original image, selected by the ROI region specified
 
     Parameters
@@ -200,7 +188,7 @@ def image_set_roi(image, roi=None):
         return image
  
  
-def image_set_thr(image, thr_low=None, thr_hi=None, replacement_value=0):
+def set_thr(image, thr_low=None, thr_hi=None, replacement_value=0):
     """Returns a copy of the original image, with a low and an high thresholds applied
 
     Parameters
@@ -227,7 +215,7 @@ def image_set_thr(image, thr_low=None, thr_hi=None, replacement_value=0):
     return new_image
 
 
-def image_subtract_image(image, sub_image):
+def subtract_correction(image, sub_image):
     """Returns a copy of the original image, after subtraction of a user-provided image (e.g. dark background)
 
     Parameters

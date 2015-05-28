@@ -1,0 +1,1 @@
+export PATH=/reg/neh/home/sala/Programs/anaconda/bin:$PATH

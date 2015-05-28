@@ -7,11 +7,16 @@ import image_analyses as ian
 
 
 def get_dataset_tags(main_dataset):
-    if "image" in main_dataset.keys():
-        dataset = main_dataset["image"]
-    else:
-        dataset = main_dataset["data"]
-    tags_list = 1e6 * main_dataset["time"]["seconds"].astype(long) + main_dataset["time"]["fiducials"]
+    try:
+        if "image" in main_dataset.keys():
+            dataset = main_dataset["image"]
+        else:
+            dataset = main_dataset["data"]
+        tags_list = 1e6 * main_dataset["time"]["seconds"].astype(long) + main_dataset["time"]["fiducials"]
+    except:
+        dataset = main_dataset
+        tags_list = 1e6 * main_dataset.parent["time"]["seconds"].astype(long) + main_dataset.parent["time"]["fiducials"]
+        
     return dataset, tags_list
 
 class Analysis(object):
@@ -60,7 +65,7 @@ def images_iterator_cspad140(images, chunk_size=1, mask=None):
     """Iterator over CSPAD140 images, as taken at LCLS.    
     ADD BLAH
     """
-    
+
     # where to put this geometry configurations?
     pixel_width = 110 # in microns
     vertical_gap_mm = 2.3 # in mm
@@ -76,13 +81,11 @@ def images_iterator_cspad140(images, chunk_size=1, mask=None):
             dset = images[idx[i:end_i]]
         else:
             dset = images[i:end_i]
-            print dset.shape, i, end_i
             if dset.shape[0] == 0:
                 yield None
                 continue
             vertical_gap_px_arr = np.zeros((dset.shape[0], dset.shape[2], 
                                             int(round(vertical_gap_mm * 1.e+3 / pixel_width))))
-            #print dset.T[0].T.swapaxes(1, 2).shape, vertical_gap_px_arr.shape, dset.T[1].T.swapaxes(1, 2).shape
             dset_glued = np.concatenate((dset.T[0].T.swapaxes(1, 2), 
                                      vertical_gap_px_arr, dset.T[1].T.swapaxes(1, 2)), axis=2)            
         for j in range(dset.shape[0]): 
@@ -140,12 +143,14 @@ class ImagesProcessor(object):
         self.f_for_all_images = {}
         self.analyses = []
         self.available_analyses = {}
-        self.available_analyses["image_get_histo_adu"] = (ian.image_get_histo_adu, None)
-        self.available_analyses["image_get_mean_std"] = (ian.image_get_mean_std, ian.image_get_mean_std_results)
-        self.available_analyses["image_get_spectra"] = (ian.image_get_spectra, None)
+        self.available_analyses["get_histo_counts"] = (ian.get_histo_counts, None)
+        self.available_analyses["get_mean_std"] = (ian.get_mean_std, ian.get_mean_std_results)
+        self.available_analyses["get_projection"] = (ian.get_projection, None)
         self.available_preprocess = {}
-        self.available_preprocess["image_set_roi"] = ian.image_set_roi
-        self.available_preprocess["image_set_thr"] = ian.image_set_thr
+        self.available_preprocess["set_roi"] = ian.set_roi
+        self.available_preprocess["set_thr"] = ian.set_thr
+        self.available_preprocess["subtract_correction"] = ian.subtract_correction
+
         self.n = -1
         self.flatten_results = False
         self.preprocess_list = []
@@ -322,10 +327,7 @@ class ImagesProcessor(object):
             hf.close()
             raise RuntimeError("Please provide a dataset name using the `set_sacla_dataset` method!")
 
-        #self.datasetname_main = "/Configure:0000/Run:0000/CalibCycle:0001/"     
-        #print self.datasetname_main + self.dataset_name        
         main_dataset = hf[self.dataset_name]
-
         dataset, tags_list = get_dataset_tags(main_dataset)
         
         tags_mask = None
@@ -348,10 +350,6 @@ class ImagesProcessor(object):
             analysis.temp_arguments["image_shape"] = None
             analysis.temp_arguments["image_dtype"] = None
 
-            # here do the bunch load on tags_list
-            
-            analysis.temp_arguments["image_shape"] = dataset[0].shape
-            analysis.temp_arguments["image_dtype"] = dataset[0].dtype
         # loop on tags
         chunk_size = 100
         images_iter = self.images_iterator(dataset, chunk_size, tags_mask)
@@ -362,12 +360,11 @@ class ImagesProcessor(object):
             if self.f_for_all_images != {}:
                 for k in self.preprocess_list:
                     image = self.f_for_all_images[k]['f'](image, **self.f_for_all_images[k]['args'])
-
-            if image is not None and analysis.temp_arguments["image_shape"] is not None:
-                analysis.temp_arguments["image_shape"] = image.shape
-                analysis.temp_arguments["image_dtype"] = image.dtype
-
+            
             for analysis in self.analyses:
+                if image is not None and analysis.temp_arguments["image_shape"] is None:
+                    analysis.temp_arguments["image_shape"] = image.shape
+                    analysis.temp_arguments["image_dtype"] = image.dtype
                 analysis.results, analysis.temporary_arguments = analysis.function(analysis.results, analysis.temp_arguments, image, **analysis.arguments)
             
         for analysis in self.analyses:
@@ -377,6 +374,9 @@ class ImagesProcessor(object):
                 results.update(analysis.results)
             else:
                 results[analysis.name] = analysis.results
+
+        # return also the analyzed tags
+        results["tags"] = tags_list
         self.results = results
         hf.close()
         return self.results

@@ -5,113 +5,76 @@ Created on Tue May 26 16:16:34 2015
 @author: sala
 """
 
-from images_processor import ImagesProcessor
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
+import sys
+XPP_LIB = "../utilities/"
+sys.path.append(XPP_LIB)
+import plot_utilities as pu
+from images_processor import ImagesProcessor
 
-def plot_image_and_proj(image, title=""):
-    plt.figure()
-    gs = gridspec.GridSpec(3, 2, width_ratios=[3, 1], height_ratios=[0.2, 3, 1]) 
-    ax0 = plt.subplot(gs[1,0])
-    plt.title(title)
-    ims = plt.imshow(image, aspect="auto")
-    
-    ax2 = plt.subplot(gs[2,0], sharex=ax0, )
-    plt.plot(image.sum(axis=0))
-    plt.subplot(gs[1,1], sharey=ax0)
-    plt.plot(image.sum(axis=1), range(len(image.sum(axis=1))))
-
-    ax = plt.subplot(gs[0,0])
-    plt.colorbar(ims, orientation="horizontal", cax=ax)
-    
-    plt.tight_layout()
+if len(sys.argv) != 2:
+    print "Usage: %s filename" % sys.argv[0]
+    sys.exit(-1)
 
 
-run = 2
-DIR = "/home/sala/Work/Data/LCLS/"
+DIR = "/reg/d/psdm/XPP/xpph6015/hdf5/"
 #fname = DIR + "cxi61812-r0196.h5"
-fname = DIR + "/LH60/xpph6015-r0002.h5"
+run = sys.argv[1].split("-")[-1].split(".")[0]
+fname = DIR + sys.argv[1]  # "xpph6015-r0002.h5"
+
+# the dataset path common to everything:
 dset_main = "/Configure:0000/Run:0000/CalibCycle:0000/"
-dset_name = "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.0"
-#dset_name = "CsPad2x2::ElementV1/CxiSc2.0:Cspad2x2.0"
 
+# Starting the Images Processor for CsPad #0
 ip = ImagesProcessor()
+dset_name = "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.0"
+# setting the dataset
 ip.set_dataset(dset_main + dset_name)
-ip.add_analysis('image_get_mean_std')
-ip.add_analysis('image_get_histo_adu')
-
+# addind the analysis
+ip.add_analysis('get_mean_std')
+ip.add_analysis('get_histo_counts')
+# special image iterator (CsPad140 needs some special care)
 ip.set_images_iterator('images_iterator_cspad140')
+# run the analysis
 results = ip.analyze_images(fname, )
 
-images_mean = results["image_get_mean_std"]["images_mean"]
-h = results["image_get_histo_adu"]
+# plot the results
+images_mean = results["get_mean_std"]["images_mean"]
+h0 = results["get_histo_counts"]
+pu.plot_image_and_proj(images_mean, title="CsPad #0")
+plt.savefig("%s_cspad_0.png" % run)
 
-plot_image_and_proj(images_mean, title="CsPad #0")
-plt.savefig("run%d_cspad_0.png" % run)
-
-plt.figure()
-plt.title("CsPad 140 #0")
-plt.bar(h["histo_adu_bins"][:-1], h["histo_adu"], width=5, log=True)
-plt.savefig("run%d_cspad_histo_0.png" % run)
-
+# Do the same for CsPad #1
 dset_name = "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.1"
 ip.set_dataset(dset_main + dset_name)
 results = ip.analyze_images(fname, )
+images_mean = results["get_mean_std"]["images_mean"]
+h1 = results["get_histo_counts"]
+pu.plot_image_and_proj(images_mean, title="CsPad #1")
+plt.savefig("%s_cspad_1.png" % run)
 
-images_mean = results["image_get_mean_std"]["images_mean"]
-h = results["image_get_histo_adu"]
-plot_image_and_proj(images_mean, title="CsPad #1")
-plt.savefig("run%d_cspad_1.png" % run)
-
+# a separate plot for histos
 plt.figure()
+plt.subplot(121)
 plt.title("CsPad 140 #0")
-plt.bar(h["histo_adu_bins"][:-1], h["histo_adu"], width=5, log=True)
-plt.savefig("run%d_cspad_histo_1.png" % run)
+plt.bar(h0["histo_bins"][:-1], h0["histo_counts"], width=5, log=True)
+plt.subplot(122)
+plt.title("CsPad 140 #1")
+plt.bar(h1["histo_bins"][:-1], h1["histo_counts"], width=5, log=True)
+plt.savefig("%s_cspad_histos.png" % run)
 
-#FEE
-
+#And now the Downstream spectrometer
 opal_0 = dset_main + "/Camera::FrameV1/XppEndstation.0:Opal1000.0"
-opal_1 = dset_main + "/Camera::FrameV1/XppEndstation.0:Opal1000.1"
-
 ip.set_dataset(opal_0)
+# setting back the standard images iterator
 ip.set_images_iterator('images_iterator')
 results_opal = ip.analyze_images(fname)
+images_mean = results_opal["get_mean_std"]["images_mean"]
+h = results_opal["get_histo_counts"]
+pu.plot_image_and_proj(images_mean, title="Opal #0")
+plt.savefig("%s_opal_0.png" % run)
 
-images_mean = results_opal["image_get_mean_std"]["images_mean"]
-h = results_opal["image_get_histo_adu"]
-plot_image_and_proj(images_mean, title="Opal #0")
-plt.savefig("run%d_opal_0.png" % run)
-
-"""
-plt.figure()
-plt.subplot(211)
-plt.title("Opal0")
-plt.imshow(images_mean, aspect="auto")
-plt.colorbar()
-plt.subplot(212)
-plt.title("Opal0")
-plt.plot(images_mean.sum(axis=0))
-plt.plot(images_mean.sum(axis=1))
-"""
-
-ip.set_dataset(opal_1)
-ip.set_images_iterator('images_iterator')
-results_opal = ip.analyze_images(fname)
-
-images_mean = results_opal["image_get_mean_std"]["images_mean"]
-h = results_opal["image_get_histo_adu"]
-plot_image_and_proj(images_mean, title="Opal #1")
-
-"""
-plt.figure()
-plt.subplot(211)
-plt.title("Opal1")
-plt.imshow(images_mean, aspect="auto")
-plt.colorbar()
-plt.subplot(212)
-plt.title("Opal1")
-plt.plot(images_mean.sum(axis=0))
-plt.plot(images_mean.sum(axis=1))
-"""
-plt.savefig("run%d_opal_1.png" % run)
+plt.tight_layout()
+plt.show()

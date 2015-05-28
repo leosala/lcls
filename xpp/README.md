@@ -21,4 +21,4 @@ plus some custom designed utilities, as:
 
 * `xpp_utilities` (as xpp), which contains utilities for loading scalar data from XPP hdf5 files, and create the correct pulse tag
 * `hdf5_utilities` (as h5u), which contains the `search_hdf5` function (to search for datasets)
-* `images_processor` (as ip), which contains utilities to analyse and filter images
+* `ImagesProcessor`, which contains utilities to analyse and filter images

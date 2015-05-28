@@ -25,10 +25,19 @@ def compute_beam_energy(ebeam):
                   0.0003 * ebeam['fEbeamPkCurrBC2'])), 2)
 
     return beam_energy
-    
+
+def get_data_with_tags(fname, quant, conf_cycle=0, run_cycle=0, calib_cycle=0):
+    #for quant in quants:
+    #    if not quant_map.has_key(quant):
+    #        quant_map[quant] = quant
+    f = h5py.File(fname, 'r')
+    main_dsetname = "/Configure:%04d/Run:%04d/CalibCycle:%04d/" % (conf_cycle, run_cycle, calib_cycle)
+    dset = f[main_dsetname + quant]
+    print main_dsetname + quant
+    tags = 1e6 * dset.parent['time']["seconds"].astype(long) + dset.parent['time']["fiducials"]
+    return dset, tags
     
 def get_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, ):
-
     if isinstance(quants, str):
         quants = [quants]
     for quant in quants:
