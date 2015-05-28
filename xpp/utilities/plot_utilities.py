@@ -13,7 +13,7 @@ def plot_image_and_proj(image, title=""):
     title: string
            optional title for the plot
     """
-    plt.figure()
+    fig = plt.figure()
     gs = gridspec.GridSpec(3, 2, width_ratios=[3, 1], height_ratios=[0.2, 3, 1]) 
     ax0 = plt.subplot(gs[1,0])
     plt.title(title)
@@ -26,9 +26,7 @@ def plot_image_and_proj(image, title=""):
 
     ax = plt.subplot(gs[0,0])
     plt.colorbar(ims, orientation="horizontal", cax=ax)
-    
-    plt.tight_layout()
-    plt.show()
+    fig.show()
 
 
 def rebin(a, *args):

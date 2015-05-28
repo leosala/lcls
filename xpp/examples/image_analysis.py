@@ -76,5 +76,10 @@ h = results_opal["get_histo_counts"]
 pu.plot_image_and_proj(images_mean, title="Opal #0")
 plt.savefig("%s_opal_0.png" % run)
 
+plt.figure()
+plt.title("FEE img proj, %s" % run)
+for i in range(3):
+    plt.plot(results['get_projection']['spectra'][i])
+
 plt.tight_layout()
 plt.show()
