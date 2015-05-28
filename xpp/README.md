@@ -102,7 +102,7 @@ Out[9]: <matplotlib.axes._subplots.AxesSubplot at 0x2abc35c1a3d0>
 
 In [10]: plt.show()
 ```
-
+![example tagged image](https://cloud.githubusercontent.com/assets/4245111/7851213/e4a12d2a-04a0-11e5-8aa4-67c927a17257.png)
 
 # Description of examples
 
