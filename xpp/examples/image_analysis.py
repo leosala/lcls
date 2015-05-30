@@ -49,10 +49,10 @@ plt.savefig("%s_cspad_0.png" % run)
 # Do the same for CsPad #1
 dset_name = "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.1"
 ip.set_dataset(dset_main + dset_name)
-results = ip.analyze_images(fname, )
-images_mean = results["get_mean_std"]["images_mean"]
-h1 = results["get_histo_counts"]
-pu.plot_image_and_proj(images_mean, title="CsPad #1")
+results1 = ip.analyze_images(fname, )
+images_mean1 = results1["get_mean_std"]["images_mean"]
+h1 = results1["get_histo_counts"]
+pu.plot_image_and_proj(images_mean1, title="CsPad #1")
 plt.savefig("%s_cspad_1.png" % run)
 
 # a separate plot for histos
@@ -76,10 +76,6 @@ h = results_opal["get_histo_counts"]
 pu.plot_image_and_proj(images_mean, title="Opal #0")
 plt.savefig("%s_opal_0.png" % run)
 
-plt.figure()
-plt.title("FEE img proj, %s" % run)
-for i in range(3):
-    plt.plot(results['get_projection']['spectra'][i])
 
 plt.tight_layout()
 plt.show()

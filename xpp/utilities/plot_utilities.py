@@ -3,7 +3,7 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 
-def plot_image_and_proj(image, title=""):
+def plot_image_and_proj(image, title="", **kwargs):
     """Plots an image and the projections (sums) of it on the x, y axes. 
 
     Parameters
@@ -17,7 +17,7 @@ def plot_image_and_proj(image, title=""):
     gs = gridspec.GridSpec(3, 2, width_ratios=[3, 1], height_ratios=[0.2, 3, 1]) 
     ax0 = plt.subplot(gs[1,0])
     plt.title(title)
-    ims = plt.imshow(image, aspect="auto")
+    ims = plt.imshow(image, aspect="auto", **kwargs)
     
     ax2 = plt.subplot(gs[2,0], sharex=ax0, )
     plt.plot(image.sum(axis=0))

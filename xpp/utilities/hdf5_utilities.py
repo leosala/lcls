@@ -87,7 +87,7 @@ def search_hdf5(hdf5_group, regexp, print_elems=0, print_datasets=True):
 
     regexp = ".*" + regexp + ".*"
     rule = re.compile(regexp)
-    print regexp
+
     class visit(object):
         def __init__(self):
             self.result = {}

@@ -150,7 +150,8 @@ class ImagesProcessor(object):
         self.available_preprocess["set_roi"] = ian.set_roi
         self.available_preprocess["set_thr"] = ian.set_thr
         self.available_preprocess["subtract_correction"] = ian.subtract_correction
-
+        self.available_preprocess["correct_bad_pixels"] = ian.correct_bad_pixels
+        
         self.n = -1
         self.flatten_results = False
         self.preprocess_list = []
@@ -192,6 +193,7 @@ class ImagesProcessor(object):
             self.f_for_all_images[f_name] = {'f': self.available_preprocess[f], "args": args}
         else:
             self.f_for_all_images[f_name] = {'f': f, "args": args}
+        print "[INFO] Preproces %s added" % label
         self.preprocess_list.append(f_name)
         
     def list_preprocess(self):
@@ -351,7 +353,7 @@ class ImagesProcessor(object):
             analysis.temp_arguments["image_dtype"] = None
 
         # loop on tags
-        chunk_size = 100
+        chunk_size = 1000
         images_iter = self.images_iterator(dataset, chunk_size, tags_mask)
         for image_i, image in enumerate(images_iter):
             if image_i >= n_images:

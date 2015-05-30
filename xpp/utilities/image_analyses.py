@@ -234,3 +234,21 @@ def subtract_correction(image, sub_image):
     return new_image - sub_image
 
 
+def mask_pixels(image, mask):
+    new_image = image.copy()
+    new_image[mask] = 0
+    return new_image
+
+
+def correct_bad_pixels(image, mask, method="swiss"):
+    new_image = image.copy()
+    points = np.array(np.where(mask == True))
+    if method == "swiss":
+        # add check if neigh pixels is hot, too
+        for x, y in points.T:
+            if x == 0 or y == 0 or x == image.shape[0]-1 or y == image.shape[1]-1:
+                continue
+            new_image[x, y] = new_image[x - 1, y] + new_image[x + 1, y] + new_image[x, y - 1] + new_image[x, y + 1]
+            new_image[x, y] /= 4
+    return new_image
+

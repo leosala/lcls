@@ -26,6 +26,7 @@ def compute_beam_energy(ebeam):
 
     return beam_energy
 
+
 def get_data_with_tags(fname, quant, conf_cycle=0, run_cycle=0, calib_cycle=0):
     #for quant in quants:
     #    if not quant_map.has_key(quant):
@@ -37,13 +38,12 @@ def get_data_with_tags(fname, quant, conf_cycle=0, run_cycle=0, calib_cycle=0):
     return dset, tags
 
 
-def get_scalar_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, ):
+def get_scalar_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, n_events=-1):
     if isinstance(quants, str):
         quants = [quants]
     for quant in quants:
         if not quant_map.has_key(quant):
             quant_map[quant] = quant
-            print quant
             #print "[ERROR] Quantity '%s' not available" % quant
             #print "Available values are: ", quant_map.keys()
             #exit(-1)   
@@ -68,8 +68,8 @@ def get_scalar_data(fname, quants, conf_cycle=0, run_cycle=0, calib_cycle=0, ):
         
         dset_name = possible_datasets.pop()
     
-        dset_data = main_dset[dset_name + "/data"]
-        dset_time = main_dset[dset_name + "/time"]    
+        dset_data = main_dset[dset_name + "/data"][:n_events]
+        dset_time = main_dset[dset_name + "/time"][:n_events]
     
         pd_dict = {}
         pd_dict["tags"] = 1000000 * dset_time["seconds"].astype(long) + dset_time["fiducials"]
