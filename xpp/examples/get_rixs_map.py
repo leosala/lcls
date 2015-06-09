@@ -19,8 +19,8 @@ import xpp_utilities as xpp
 
 # FEE spectrometer filtering
 x_low = 200  # n pixels to check for no signal, from left
-x_hi = 700  # n pixels to check for no signal, from right
-thr = 8e-5  # threshold on sum of counts in each of the outlier areas
+x_hi = 200  # n pixels to check for no signal, from right
+thr = 8e-3  # threshold on sum of counts in each of the outlier areas
 n_events = 10000
 
 roi1 = [[0, 388], [155, 172]]
@@ -33,6 +33,16 @@ roi1 = [[0, 388], [105, 124]]
 if len(sys.argv) != 2:
     print "Usage: %s filename" % sys.argv[0]
     sys.exit(-1)
+
+
+dark_f = h5py.File("../scripts/dark_run0030.h5", "r")
+dark0 = dark_f['CsPad0/mean'][:]
+dark1 = dark_f['CsPad1/mean'][:]
+
+bad_f = h5py.File("../scripts/bad_pixels_r129_gt4.h5", "r")
+
+bad_pixel_mask0 = bad_f['CsPad0/bad_pixel_mask'][:]
+bad_pixel_mask1 = bad_f['CsPad1/bad_pixel_mask'][:]
 
 
 fee_response_coeff = [3.06012545e-04,  -1.48236282e+00,   1.67440870e+03, -1.40806046e+04]
@@ -66,7 +76,7 @@ for i in range(fee_spectra_data.shape[0]):
         #fee_spectra_data[i, :] = np.divide(fee_spectra_data[i, :], fee_response[:-10])
         fee_spectra_data[i, :] = savgol_filter(fee_spectra_data[i], 11, 2)
 
-for i in range(fee_tags[:5000].shape[0]):
+for i in range(fee_tags[:n_events].shape[0]):
     mymax = fee_spectra_data[i].max()
     if fee_spectra_data[i][: x_low].max() / mymax > thr or fee_spectra_data[i][-x_hi:].max() / mymax > thr:
         fee_mask2[i] = False
@@ -84,6 +94,9 @@ fee_mask = fee_mask2 * np.in1d(fee_tags[:n_events], tags_i0)
 ip = ImagesProcessor()
 # setting the dataset
 ip.set_dataset(main_dsetname + "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.1")
+ip.add_preprocess("subtract_correction", args={'sub_image': dark1})
+ip.add_preprocess("set_thr", args={"thr_low": 20})
+ip.add_preprocess("correct_bad_pixels", args={"mask": bad_pixel_mask1})
 ip.add_preprocess("set_roi", args={'roi': roi1})
 ip.set_images_iterator("images_iterator_cspad140")
 ip.add_analysis("get_projection", args={'axis': 1})
