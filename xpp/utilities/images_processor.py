@@ -162,7 +162,8 @@ class ImagesProcessor(object):
         return self.analyze_images(dataset_file, n=n, tags=tags)
 
     def set_images_iterator(self, func_name=None):
-        """"""
+        """
+        """
         if func_name is None:
             print "[WARNING] no images_iterator provided, doing nothing"
             return
@@ -193,7 +194,7 @@ class ImagesProcessor(object):
             self.f_for_all_images[f_name] = {'f': self.available_preprocess[f], "args": args}
         else:
             self.f_for_all_images[f_name] = {'f': f, "args": args}
-        print "[INFO] Preproces %s added" % label
+        print "[INFO] Preprocess %s added" % f_name
         self.preprocess_list.append(f_name)
         
     def list_preprocess(self):
