@@ -324,7 +324,7 @@ class ImagesProcessor(object):
 
         hf = h5py.File(fname, "r")
 
-        self.run = hf.keys()[-1]  # find a better way
+        #self.run = hf.keys()[-1]  # find a better way
         if self.dataset_name is None:
             hf.close()
             raise RuntimeError("Please provide a dataset name using the `set_sacla_dataset` method!")

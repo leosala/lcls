@@ -27,11 +27,12 @@ DIR = "/reg/d/psdm/xpp/xpph6015/ftc/hdf5/"
 n_events = -1  #2000
 
 if len(sys.argv) != 2:
-    print "Usage: %s filename" % sys.argv[0]
+    print "Usage: %s run_number" % sys.argv[0]
     sys.exit(-1)
 
 run = int(sys.argv[1])
 fname = DIR + "xpph6015-r%04d.h5" % run  # DIR + "xpph6015-r0005.h5"
+print "Running on %s" %fname
 
 image_label = "Run %d" % run
 
@@ -70,7 +71,11 @@ h0 = results0["get_histo_counts"]
 h1 = results1["get_histo_counts"]
 
 # saving everything in an hdf5 file
-out_f = h5py.File("dark_run%04d.h5" %run)
+if do_bad_pixels:
+    out_f = h5py.File("badpixel_run%04d_gt%d.h5" %(run, bad_pixel_thr))
+else:
+    out_f = h5py.File("dark_run%04d.h5" %run)
+
 dset = out_f.create_dataset("CsPad0/mean", data=images_mean0)
 dset = out_f.create_dataset("CsPad1/mean", data=images_mean1)
 if do_bad_pixels:
