@@ -29,7 +29,7 @@ import plot_utilities as pu
 from images_processor import ImagesProcessor
 import xpp_utilities as xpp
 
-n_events = 500
+n_events = 100
 
 # CsPad ROIs 
 # from run 127 till run XXXX
@@ -47,18 +47,24 @@ if len(sys.argv) != 2:
 
 
 # Dark background corrections
-dark_f = h5py.File("../scripts/dark_run0030.h5", "r")
+dark_f = h5py.File("data/dark_run0030.h5", "r")
 dark0 = dark_f['CsPad0/mean'][:]
 dark1 = dark_f['CsPad1/mean'][:]
 
 # Bad pixels map
-bad_f = h5py.File("../scripts/bad_pixels_r129_gt4.h5", "r")
+bad_f = h5py.File("data/bad_pixels_r129_gt4.h5", "r")
 bad_pixel_mask0 = bad_f['CsPad0/bad_pixel_mask'][:]
 bad_pixel_mask1 = bad_f['CsPad1/bad_pixel_mask'][:]
 
 # data filename
-fname = sys.argv[1]  # DIR + "xpph6015-r0005.h5"
-run = fname.split("-")[-1].split(".")[0]
+DIR = "/reg/d/psdm/XPP/xpph6015/hdf5/"
+DIR = "/reg/d/psdm/xpp/xpph6015/ftc/hdf5/"
+run = int(sys.argv[1])
+fname = DIR + "xpph6015-r%04d.h5" % run  # DIR + "xpph6015-r0005.h5"
+print "Running on %s" %fname
+
+#fname = sys.argv[1]  # DIR + "xpph6015-r0005.h5"
+#run = fname.split("-")[-1].split(".")[0]
 # the root dataset
 main_dsetname = "/Configure:0000/Run:0000/CalibCycle:0000/"
 
@@ -110,9 +116,15 @@ cspad0_tags = results["tags"]
 cspad_tags_mask = np.in1d(cspad0_tags, holy_tags, assume_unique=True)
 fee_tags_mask = np.in1d(holy_tags, cspad0_tags, assume_unique=True)
 
+# int64 conversion needed because of tags
+fee_map = np.insert(fee_spectra_data[fee_tags_mask].astype(np.int64), 0,
+                    fee_tags[fee_tags_mask].astype(np.int64), axis=1)
+cspad_map = np.insert(cspad0_spectra[cspad_tags_mask].astype(np.int64), 0,
+                      cspad0_tags[cspad_tags_mask].astype(np.int64), axis=1)
+
 # dump maps in ASCII file
-np.savetxt("%s_sase.gz" % run, fee_spectra_data[fee_tags_mask])
-np.savetxt("%s_cspad1_emission.gz" % run, fee_spectra_data[cspad_tags_mask])
+np.savetxt("%s_sase.gz" % run, fee_map, header="#tags\tpixels")
+np.savetxt("%s_cspad1_emission.gz" % run, cspad_map, header="#tags\tpixels")
 
 # produce RIXS map
 #cspad0_spectra[cspad0_spectra < 0] = 0
