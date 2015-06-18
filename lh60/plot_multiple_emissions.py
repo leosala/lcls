@@ -25,7 +25,7 @@ import xpp_utilities as xpp
 #runs = [110, 103, 107, 106, 108]
 #runs = [127, 128, ]
 #runs = [130, 131, 132, 133, 135, 136, 137, 138, 139, 140]
-runs = [152, 153, 154, 155, 156, 157]
+runs = [152, ]##153, 154, 155, 156, 157]
 
 #DIR = "/reg/d/psdm/XPP/xpph6015/hdf5/"
 DIR = "/reg/d/psdm/xpp/xpph6015/ftc/hdf5/"
@@ -44,7 +44,7 @@ roi0 = [[0, 388], [150, 160]]
 roi1 = [[0, 388], [105, 124]]
 
 # events per run to be analyzed
-n_events = 100
+n_events = 1000
 
 ip = ImagesProcessor()
 # the dataset path common to everything:
@@ -62,7 +62,8 @@ dark0 = dark_f['CsPad0/mean'][:]
 dark1 = dark_f['CsPad1/mean'][:]
 
 # masking bad pixels
-bad_f = h5py.File("data/bad_pixels_r129_gt4.h5", "r")
+#bad_f = h5py.File("data/bad_pixels_r129_gt4.h5", "r")
+bad_f = h5py.File("bad_pixels_r0126_gt4.0.h5", "r")
 bad_pixel_mask0 = bad_f['CsPad0/bad_pixel_mask'][:]
 bad_pixel_mask1 = bad_f['CsPad1/bad_pixel_mask'][:]
 

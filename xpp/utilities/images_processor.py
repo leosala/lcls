@@ -54,14 +54,14 @@ def images_iterator(images, chunk_size=1, mask=None):
         end_i = min(i + chunk_size, images.shape[0])
         if mask is not None:
             idx = np.arange(images.shape[0])[mask]
-            dset = images[idx[i:end_i]]
+            dset = images[mask[i:end_i]]
         else:
             dset = images[i:end_i]
         for j in range(dset.shape[0]):
             yield dset[j]
 
 
-def images_iterator_cspad140(images, chunk_size=1, mask=None):
+def images_iterator_cspad140(images, chunk_size=1, mask=None, n_events=-1):
     """Iterator over CSPAD140 images, as taken at LCLS.    
     ADD BLAH
     """
@@ -71,22 +71,26 @@ def images_iterator_cspad140(images, chunk_size=1, mask=None):
     vertical_gap_mm = 2.3 # in mm
 
     i = 0
-    if chunk_size >= images.shape[0]:
-        chunk_size = images.shape[0]
+    if n_events == -1:
+        n_events = images.shape[0] 
 
-    for i in range(0, images.shape[0], chunk_size):
-        end_i = min(i + chunk_size, images.shape[0])
+    if chunk_size >= n_events:
+        chunk_size = n_events
+
+    for i in range(0, n_events, chunk_size):
+        print "Processing event %d / %d" % (i, n_events)
+        end_i = min(i + chunk_size, n_events)
         if mask is not None:
-            idx = np.arange(images.shape[0])[mask]
-            dset = images[idx[i:end_i]]
+            idx = np.arange(n_events)[mask]
+            dset = images[i:end_i][mask[i:end_i]]
         else:
             dset = images[i:end_i]
             if dset.shape[0] == 0:
                 yield None
                 continue
-            vertical_gap_px_arr = np.zeros((dset.shape[0], dset.shape[2], 
-                                            int(round(vertical_gap_mm * 1.e+3 / pixel_width))))
-            dset_glued = np.concatenate((dset.T[0].T.swapaxes(1, 2), 
+        vertical_gap_px_arr = np.zeros((dset.shape[0], dset.shape[2], 
+                                        int(round(vertical_gap_mm * 1.e+3 / pixel_width))))
+        dset_glued = np.concatenate((dset.T[0].T.swapaxes(1, 2), 
                                      vertical_gap_px_arr, dset.T[1].T.swapaxes(1, 2)), axis=2)            
         for j in range(dset.shape[0]): 
             yield dset_glued[j]
@@ -332,18 +336,18 @@ class ImagesProcessor(object):
 
         main_dataset = hf[self.dataset_name]
         dataset, tags_list = get_dataset_tags(main_dataset)
+
+        if n != -1:
+            tags_list = tags_list[:n]
         
         tags_mask = None
         dataset_indexes = np.arange(dataset.shape[0])
         if tags is not None:
-            tags_mask = np.in1d(tags, tags_list, assume_unique=True)
-            tags_list = dataset_indexes[tags_mask]
+            tags_mask = np.in1d(tags_list, tags, assume_unique=True)
+            tags_list = tags_list[tags_mask]
             
         n_images = len(tags_list)
-        if n != -1:
-            if n < len(tags_list):
-                n_images = n
-                
+                        
         for analysis in self.analyses:
             analysis.results = {}
             analysis.results["n_entries"] = n_images
@@ -355,7 +359,8 @@ class ImagesProcessor(object):
 
         # loop on tags
         chunk_size = 1000
-        images_iter = self.images_iterator(dataset, chunk_size, tags_mask)
+        images_iter = self.images_iterator(dataset, chunk_size, tags_mask, n_events=n)
+        
         for image_i, image in enumerate(images_iter):
             if image_i >= n_images:
                 break

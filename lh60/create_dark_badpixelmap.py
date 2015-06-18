@@ -17,7 +17,7 @@ from images_processor import ImagesProcessor
 # do bad pixel map?
 do_bad_pixels = True
 # if so, which value to use for defining it a bad pixel?
-bad_pixel_thr = 6.5
+bad_pixel_thr = 4  #6.5
 
 # data directories
 #DIR = "/reg/d/psdm/XPP/xpph6015/hdf5/"
@@ -72,15 +72,15 @@ h1 = results1["get_histo_counts"]
 
 # saving everything in an hdf5 file
 if do_bad_pixels:
-    out_f = h5py.File("badpixel_run%04d_gt%d.h5" %(run, bad_pixel_thr))
+    out_f = h5py.File("bad_pixels_r%04d_gt%.1f.h5" %(run, bad_pixel_thr))
 else:
     out_f = h5py.File("dark_run%04d.h5" %run)
 
 dset = out_f.create_dataset("CsPad0/mean", data=images_mean0)
 dset = out_f.create_dataset("CsPad1/mean", data=images_mean1)
 if do_bad_pixels:
-    dset = out_f.create_dataset("CsPad0/bad_pixel", data=(images_std0 > bad_pixel_thr))
-    dset = out_f.create_dataset("CsPad1/bad_pixel", data=(images_std1 > bad_pixel_thr))
+    dset = out_f.create_dataset("CsPad0/bad_pixel_mask", data=(images_mean0 > 4)) #data=((images_std0 < 3) | (images_std0 > 8)))
+    dset = out_f.create_dataset("CsPad1/bad_pixel_mask", data=(images_mean1 > 4)) #data=((images_std1 < 3) | (images_std1 > 8)))
 
 dset = out_f.create_dataset("CsPad0/std", data=images_std0)
 dset = out_f.create_dataset("CsPad1/std", data=images_std1)
@@ -92,10 +92,17 @@ dset = out_f.create_dataset("CsPad1/histo_bins", data=h1["histo_bins"])
 out_f.close()
 
 # plot the results
-pu.plot_image_and_proj(images_mean0, title="CsPad #0 %s" % image_label)
-pu.plot_image_and_proj(images_mean1, title="CsPad #1 %s" % image_label)
+pu.plot_image_and_proj(images_mean0, title="CsPad #0 %s" % image_label, vmax=10)
+pu.plot_image_and_proj(images_mean1, title="CsPad #1 %s" % image_label, vmax=10)
+pu.plot_image_and_proj(images_std0, vmax=10)
+pu.plot_image_and_proj(images_std1, vmax=10)
+pu.plot_image_and_proj(((images_std0 < 3) | (images_std0 > 8)), )
+pu.plot_image_and_proj(((images_std1 < 3) | (images_std1 > 8)), )
+#pu.plot_image_and_proj(, title="CsPad #1 %s" % image_label, vmax=bad_pixel_thr)
+
 
 # a separate plot for histos
+"""
 plt.figure()
 plt.subplot(121)
 plt.title("CsPad 140 #0")
@@ -103,5 +110,5 @@ plt.bar(h0["histo_bins"][:-1], h0["histo_counts"], width=5, log=True)
 plt.subplot(122)
 plt.title("CsPad 140 #1")
 plt.bar(h1["histo_bins"][:-1], h1["histo_counts"], width=5, log=True)
-
+"""
 plt.show()

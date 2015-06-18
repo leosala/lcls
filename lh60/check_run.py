@@ -1,5 +1,5 @@
 """
-Script to create the SASE and emission maps, with proper:
+Script to check basic run quantities, with:
 + dark background correction
 + bad pixels map
 + data quality cuts
@@ -10,11 +10,32 @@ import matplotlib.pyplot as plt
 import h5py
 import numpy as np
 import pandas as pd
-import imp
-from scipy.signal import savgol_filter
+
+
+def interpolate_pixel_hline(image, pixel_pos, axis=0, method="mean"):
+    """
+
+    Parameters
+    ----------
+    image: Numpy array
+        the input array image
+    hpixels: int
+        the pixel line to be interpolated
+
+
+    Returns
+    -------
+    image: Numpy array
+        the image, with subtraction applied
+    """
+    if axis == 0:
+        image[hpixel] = (image[hpixel - 1] + image[hpixel + 1]) / 2
+    else:
+        image[:, hpixel] = (image[:, hpixel - 1] + image[:, hpixel + 1]) / 2
+    return image
+
 
 # import dictionary with useful XPP datasets
-#dset_names = imp.load_source('dset_names', '../scripts/xpp_datasets.py').dset_names
 from xpp_datasets import dset_names
 dset_names["IPM0"] = "Lusi::IpmFexV1/XppEnds_Ipm0/data"
 
@@ -26,17 +47,16 @@ import plot_utilities as pu
 from images_processor import ImagesProcessor
 import xpp_utilities as xpp
 
-n_events = 10000
-
+n_events = 2000
 # CsPad ROIs 
 # from run 127 till run XXXX
 roi0 = [[0, 388], [150, 161]]
 roi1 = [[0, 388], [105, 124]]
 
 # data quality cuts
-fee_i0 = 1.0
+#fee_i0 = 1.0
 #ch2_i0 = 0.1
-ch2_i0 = 0.1
+#ch2_i0 = 0.1
 
 # checking arguments
 if len(sys.argv) != 2:
@@ -73,28 +93,13 @@ fee_mask = np.ones(fee_tags[:n_events].shape, dtype=bool)
 # remove the very last two pixels, which sometimes are crazy possibly because of calibration procedure
 fee_spectra_data = fee_spectr.value[:, :-2].astype('int32')
 
-# getting quantities for data quality cuts
-df_i0 = xpp.get_scalar_data(fname, ["Bld::BldDataFEEGasDetEnergyV1/FEEGasDetEnergy/data", 
-                                    "Ipimb::DataV2/XppEnds_Ipm0/data"], )
-                    
+# getting quantities for checks
+# I0 Gas monitor
+df_i0 = xpp.get_scalar_data(fname, ["Bld::BldDataFEEGasDetEnergyV1/FEEGasDetEnergy/data", ] )
 i0 = df_i0['Bld::BldDataFEEGasDetEnergyV1/FEEGasDetEnergy/data.f_11_ENRC'].loc[fee_tags[:n_events]]
+# IPM0 CH2
 ipm0, ipm0_tags = xpp.get_data_with_tags(fname, dset_names["IPM0"])
 i0_ch2 = ipm0["channel"][:, 2]
-
-i0_mask = np.array((i0 > fee_i0).tolist())
-i0_ch2_mask = i0_ch2 > ch2_i0
-tags_i0 = np.array(i0.index.tolist())
-
-# getting a list of tags with the correct i0
-cond_mask = np.in1d(tags_i0[i0_mask], ipm0_tags[i0_ch2_mask])
-cond_tags = tags_i0[i0_mask][cond_mask]
-
-fee_tags_mask = fee_mask * np.in1d(fee_tags[:n_events], cond_tags, assume_unique=True)
-holy_tags = fee_tags[:n_events][fee_tags_mask]
-print "selected events: %d" % holy_tags.shape[0]
-if holy_tags.shape[0] == 0:
-    print "No events selected, exiting"
-    sys.exit(-1)
 
 ### getting the spectra from CsPads
 # loading the ImagesProcessor class
@@ -104,42 +109,42 @@ ip.set_dataset(main_dsetname + "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.1")
 ip.add_preprocess("subtract_correction", args={'sub_image': dark1})
 ip.add_preprocess("set_thr", args={"thr_low": 22})
 ip.add_preprocess("correct_bad_pixels", args={"mask": bad_pixel_mask1})
+ip.add_preprocess(interpolate_pixel_hline, args={"hpixel": 193})
 ip.add_preprocess("set_roi", args={'roi': roi1})
 ip.set_images_iterator("images_iterator_cspad140")
 ip.add_analysis("get_projection", args={'axis': 1})
+ip.add_analysis("get_mean_std", )
 # running the analyses
-results = ip.analyze_images(fname, n_events, tags=holy_tags)
+results = ip.analyze_images(fname, n_events, )
 
 ### getting the RIXS map
-print results["get_projection"].keys()
 cspad0_spectra = results["get_projection"]["spectra"]
 cspad0_tags = results["tags"]
-# creating a boolean mask with the intersection of tags from cspad and fee
-#cspad_tags_mask = np.in1d(cspad0_tags, holy_tags, assume_unique=True)
-#fee_tags_mask = np.in1d(holy_tags, cspad0_tags, assume_unique=True)
+cspad0_mean = results["get_mean_std"]["images_mean"]
+sase = fee_spectra_data
 
-# int64 conversion needed because of tags
-fee_map = np.insert(fee_spectra_data[fee_tags_mask].astype(np.int64), 0,
-                    fee_tags[fee_tags_mask].astype(np.int64), axis=1)
-cspad_map = np.insert(cspad0_spectra.astype(np.int64), 0,
-                      cspad0_tags.astype(np.int64), axis=1)
+plt.figure()
+plt.subplot(121)
+plt.title("Run %d" % run)
+plt.plot(i0_ch2, ".", )
+plt.ylabel("FEEGasDet.f11")
+plt.subplot(122)
+plt.hist(i0_ch2, bins=100)
 
-print "same tags?", (fee_tags[fee_tags_mask] == cspad0_tags).all()
-# dump maps in ASCII file
-np.savetxt("%s_sase.gz" % run, fee_map, header="#tags\tpixels")
-np.savetxt("%s_cspad1_emission.gz" % run, cspad_map, header="#tags\tpixels")
-
-# produce RIXS map
-#cspad0_spectra[cspad0_spectra < 0] = 0
-sase = fee_spectra_data[fee_tags_mask].astype(np.float64)
-sase /= sase.max()
-inv = np.linalg.pinv(sase)
-emission_spectra = np.dot(inv, cspad0_spectra)
+plt.figure()
+plt.subplot(121)
+plt.title("Run %d" % run)
+plt.plot(i0, ".", )
+plt.ylabel("IPM0 Ch2")
+plt.subplot(122)
+plt.hist(i0.tolist(), bins=100)
 
 # finally plotting
 pu.plot_image_and_proj(cspad0_spectra, title="Emission spectra map")
 pu.plot_image_and_proj(sase, title="FEE spectra map")
-pu.plot_image_and_proj(inv, title="inv")
-pu.plot_image_and_proj(emission_spectra, title="RIXS")
+pu.plot_image_and_proj(cspad0_mean, title="Average CsPad#0")
+
+
+plt.tight_layout()
 plt.show()
 
