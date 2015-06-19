@@ -29,9 +29,9 @@ def interpolate_pixel_hline(image, pixel_pos, axis=0, method="mean"):
         the image, with subtraction applied
     """
     if axis == 0:
-        image[hpixel] = (image[hpixel - 1] + image[hpixel + 1]) / 2
+        image[pixel_pos] = (image[pixel_pos - 1] + image[pixel_pos + 1]) / 2
     else:
-        image[:, hpixel] = (image[:, hpixel - 1] + image[:, hpixel + 1]) / 2
+        image[:, pixel_pos] = (image[:, pixel_pos - 1] + image[:, pixel_pos + 1]) / 2
     return image
 
 
@@ -109,7 +109,7 @@ ip.set_dataset(main_dsetname + "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.1")
 ip.add_preprocess("subtract_correction", args={'sub_image': dark1})
 ip.add_preprocess("set_thr", args={"thr_low": 22})
 ip.add_preprocess("correct_bad_pixels", args={"mask": bad_pixel_mask1})
-ip.add_preprocess(interpolate_pixel_hline, args={"hpixel": 193})
+ip.add_preprocess(interpolate_pixel_hline, args={"pixel_pos": 193})
 ip.add_preprocess("set_roi", args={'roi': roi1})
 ip.set_images_iterator("images_iterator_cspad140")
 ip.add_analysis("get_projection", args={'axis': 1})

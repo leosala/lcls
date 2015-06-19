@@ -26,7 +26,31 @@ import plot_utilities as pu
 from images_processor import ImagesProcessor
 import xpp_utilities as xpp
 
-n_events = 10000
+
+def interpolate_pixel_hline(image, hpixel, axis=0, method="mean"):
+    """
+
+    Parameters
+    ----------
+    image: Numpy array
+        the input array image
+    hpixels: int
+        the pixel line to be interpolated
+
+
+    Returns
+    -------
+    image: Numpy array
+        the image, with subtraction applied
+    """
+    if axis == 0:
+        image[hpixel] = (image[hpixel - 1] + image[hpixel + 1]) / 2
+    else:
+        image[:, hpixel] = (image[:, hpixel - 1] + image[:, hpixel + 1]) / 2
+    return image
+
+
+n_events = 2000
 
 # CsPad ROIs 
 # from run 127 till run XXXX
@@ -104,6 +128,7 @@ ip.set_dataset(main_dsetname + "CsPad2x2::ElementV1/XppGon.0:Cspad2x2.1")
 ip.add_preprocess("subtract_correction", args={'sub_image': dark1})
 ip.add_preprocess("set_thr", args={"thr_low": 22})
 ip.add_preprocess("correct_bad_pixels", args={"mask": bad_pixel_mask1})
+ip.add_preprocess(interpolate_pixel_hline, args={"hpixel": 193})
 ip.add_preprocess("set_roi", args={'roi': roi1})
 ip.set_images_iterator("images_iterator_cspad140")
 ip.add_analysis("get_projection", args={'axis': 1})
@@ -119,7 +144,8 @@ cspad0_tags = results["tags"]
 #fee_tags_mask = np.in1d(holy_tags, cspad0_tags, assume_unique=True)
 
 # int64 conversion needed because of tags
-fee_map = np.insert(fee_spectra_data[fee_tags_mask].astype(np.int64), 0,
+sase = fee_spectra_data[fee_tags_mask].astype(np.float64)
+fee_map = np.insert(sase, 0,
                     fee_tags[fee_tags_mask].astype(np.int64), axis=1)
 cspad_map = np.insert(cspad0_spectra.astype(np.int64), 0,
                       cspad0_tags.astype(np.int64), axis=1)
@@ -131,15 +157,12 @@ np.savetxt("%s_cspad1_emission.gz" % run, cspad_map, header="#tags\tpixels")
 
 # produce RIXS map
 #cspad0_spectra[cspad0_spectra < 0] = 0
-sase = fee_spectra_data[fee_tags_mask].astype(np.float64)
-sase /= sase.max()
-inv = np.linalg.pinv(sase)
-emission_spectra = np.dot(inv, cspad0_spectra)
+#sase /= sase.max()
+#inv = np.linalg.pinv(sase)
+#emission_spectra = np.dot(inv, cspad0_spectra)
 
 # finally plotting
-pu.plot_image_and_proj(cspad0_spectra, title="Emission spectra map")
-pu.plot_image_and_proj(sase, title="FEE spectra map")
-pu.plot_image_and_proj(inv, title="inv")
-pu.plot_image_and_proj(emission_spectra, title="RIXS")
+pu.plot_image_and_proj(cspad0_spectra, title="Emission spectra map run %d" %run)
+pu.plot_image_and_proj(sase, title="FEE spectra map run %d" %run)
 plt.show()
 
