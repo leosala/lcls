@@ -13,16 +13,6 @@ If working with IPython, it could be worthwhile to load a few default modules, l
 ```
 $ ipython
 Python 2.7.9 |Anaconda 2.2.0 (64-bit)| (default, Apr 14 2015, 12:54:25) 
-Type "copyright", "credits" or "license" for more information.
-
-IPython 3.0.0 -- An enhanced Interactive Python.
-Anaconda is brought to you by Continuum Analytics.
-Please check out: http://continuum.io/thanks and https://binstar.org
-?         -> Introduction and overview of IPython's features.
-%quickref -> Quick reference.
-help      -> Python's own help system.
-object?   -> Details about 'object', use 'object??' for extra details.
-
 In [1]: %load load_defaults.py
 
 In [2]: # %load load_defaults.py
@@ -51,3 +41,20 @@ In [3]:
 ```
 
 This would load Numpy, Matplotlib, Pandas and H5Py libraries. For more details about the utilities contained in the `xpp` directory, please check https://github.com/leosala/lcls/tree/master/xpp.
+
+# Usage examples
+
+**INFO:** in general, in these scripts there are some *hard-coded* quantities, such us the directory where data resides, or ROIs, or thresholds, etc. Please have a look at the source code for this.
+
+## Checking a run
+
+If you want to check basic quantities of a run, such as:
+* I0
+* Average of CsPad images
+* ADU plots
+
+then you can use the `check_run.py` script, by simply stating:
+```
+python check_run.py <run_number>
+```
+where `<run_number>` is the integer identifying the run number. 
