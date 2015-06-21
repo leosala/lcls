@@ -11,7 +11,7 @@ import numpy as np
 
 import sys
 import os
-XPP_LIB = "../XPP/utilities/"
+XPP_LIB = "../xpp/utilities/"
 sys.path.append(os.getcwd() + "/" + XPP_LIB)
 
 import hdf5_utilities as h5u

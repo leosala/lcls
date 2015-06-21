@@ -55,8 +55,8 @@ roi1 = [[0, 388], [105, 124]]
 
 # data quality cuts
 #fee_i0 = 1.0
-#ch2_i0 = 0.1
-#ch2_i0 = 0.1
+#ch2_i0 = 0.2
+#gas_i0 = 1.2
 
 # checking arguments
 if len(sys.argv) != 2:
@@ -96,10 +96,15 @@ fee_spectra_data = fee_spectr.value[:, :-2].astype('int32')
 # getting quantities for checks
 # I0 Gas monitor
 df_i0 = xpp.get_scalar_data(fname, ["Bld::BldDataFEEGasDetEnergyV1/FEEGasDetEnergy/data", ] )
-i0 = df_i0['Bld::BldDataFEEGasDetEnergyV1/FEEGasDetEnergy/data.f_11_ENRC'].loc[fee_tags[:n_events]]
-# IPM0 CH2
+i0_gas = df_i0['Bld::BldDataFEEGasDetEnergyV1/FEEGasDetEnergy/data.f_11_ENRC'].loc[fee_tags[:n_events]]
+# IPM0 CH2 - need to use a different method, as it is composite data
 ipm0, ipm0_tags = xpp.get_data_with_tags(fname, dset_names["IPM0"])
-i0_ch2 = ipm0["channel"][:, 2]
+i0_ch2 = ipm0["channel"][:n_events, 2]
+# sum of FEE spectras, to be correlated with I0 Ch2
+fee_spectra_sum = fee_spectra_data[:n_events].sum(axis=1)
+# using a Pandas dataframe to correctly correlate quantities
+df_i0 = df_i0.join([pd.DataFrame({'fee_spectra_sum': fee_spectra_sum}, index=fee_tags[:n_events]), ],)
+
 
 ### getting the spectra from CsPads
 # loading the ImagesProcessor class
@@ -117,29 +122,46 @@ ip.add_analysis("get_mean_std", )
 # running the analyses
 results = ip.analyze_images(fname, n_events, )
 
-### getting the RIXS map
+### getting the emission, SASE maps
 cspad0_spectra = results["get_projection"]["spectra"]
 cspad0_tags = results["tags"]
 cspad0_mean = results["get_mean_std"]["images_mean"]
 sase = fee_spectra_data
 
+
+# finally plotting
 plt.figure()
 plt.subplot(121)
 plt.title("Run %d" % run)
 plt.plot(i0_ch2, ".", )
-plt.ylabel("FEEGasDet.f11")
+plt.ylabel("IPM0 Ch2")
 plt.subplot(122)
 plt.hist(i0_ch2, bins=100)
 
 plt.figure()
 plt.subplot(121)
 plt.title("Run %d" % run)
-plt.plot(i0, ".", )
-plt.ylabel("IPM0 Ch2")
+plt.plot(i0_gas, ".", )
+plt.ylabel("FEEGasDet.f11")
 plt.subplot(122)
-plt.hist(i0.tolist(), bins=100)
+plt.hist(i0_gas.tolist(), bins=100)
 
-# finally plotting
+plt.figure()
+plt.subplot(121)
+df_i0.plot(kind='scatter', x='fee_spectra_sum', y='Bld::BldDataFEEGasDetEnergyV1/FEEGasDetEnergy/data.f_11_ENRC')
+
+plt.figure()
+plt.subplot(121)
+plt.title("Run %d" % run)
+plt.plot(i0_ch2, fee_spectra_sum, ".", )
+plt.ylabel("FEE spectr. sum")
+plt.xlabel("I0 Ch2")
+plt.subplot(122)
+plt.title("Run %d" % run)
+plt.plot(i0_gas, fee_spectra_sum, ".", )
+plt.ylabel("FEE spectr. sum")
+plt.xlabel("FEEGasDet.f11")
+
 pu.plot_image_and_proj(cspad0_spectra, title="Emission spectra map")
 pu.plot_image_and_proj(sase, title="FEE spectra map")
 pu.plot_image_and_proj(cspad0_mean, title="Average CsPad#0")
