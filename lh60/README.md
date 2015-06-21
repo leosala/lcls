@@ -58,3 +58,21 @@ then you can use the `check_run.py` script, by simply stating:
 python check_run.py <run_number>
 ```
 where `<run_number>` is the integer identifying the run number. 
+
+## Creating a file with dark corrections / bad pixels maps
+
+`create_dark_badpixelmap.py` will either create an HDF5 file with *dark background* corrections (detector response in absence of x-rays), or a map with bad pixels (usually, randomly hot ones). The switch between the two behaviours is encoded in the script, please edit it before running!
+
+Running the script in "dark mode" will create a file with:
+* the average maps for the CsPad detectors (aka the corrections)
+* the standard deviation maps
+* the ADU histograms
+
+Instead, when run into "bad pixel" mode it will create boolean masks, identifying the pixels that should be either removed or corrected during analysis. The metric to identify those pixels depends: in this script, pixels with an average value greater than some threshold for a specific run (x-rays, but no sample) are masked.
+
+The script can be run with:
+
+```
+python create_dark_badpixelmap.py <run_number>
+```
+
