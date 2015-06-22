@@ -93,3 +93,12 @@ The final output is composed of two .gz ASCII files:
 * runXXX_cspadY_emission.gz, containing the emission spectra
 
 In both files, the first column identifies the *tag*, and the following ones the pixels
+
+## Plotting basic quantities for the CsPad tiles
+
+`plt_cspad_tile.py` plots some basic quantities for the CsPad 140k detectors, before gluing the two tiles. It plots:
+* ADU histograms
+* Average image
+* Spectra
+ 
+
