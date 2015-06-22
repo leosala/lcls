@@ -102,3 +102,18 @@ In both files, the first column identifies the *tag*, and the following ones the
 * Spectra
  
 
+## Plot emission spectra
+
+`plot_emission.py` will plot the emission spectra for both the CsPads. It can apply:
+* CsPad 140k glueing
+* Dark correction
+* Bad pixel correction
+* "fat pixel" correction
+* ADU thresolds
+* ROIs
+
+an example of how to compare multiple spectra is provided by `plot_multiple_emissions.py`
+
+## Plot Upstream / Downstream spectra
+
+`plot_spectrometers.py` plots both the upstream and downstream spectra, also with the average of images (if available)
