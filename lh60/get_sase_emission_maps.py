@@ -18,6 +18,8 @@ from scipy.signal import savgol_filter
 from xpp_datasets import dset_names
 dset_names["IPM0"] = "Lusi::IpmFexV1/XppEnds_Ipm0/data"
 
+from miscellanea import interpolate_pixel_hline
+
 # load xpp libraries
 import sys
 XPP_LIB = "../xpp/utilities/"
@@ -25,29 +27,6 @@ sys.path.append(XPP_LIB)
 import plot_utilities as pu
 from images_processor import ImagesProcessor
 import xpp_utilities as xpp
-
-
-def interpolate_pixel_hline(image, hpixel, axis=0, method="mean"):
-    """
-
-    Parameters
-    ----------
-    image: Numpy array
-        the input array image
-    hpixels: int
-        the pixel line to be interpolated
-
-
-    Returns
-    -------
-    image: Numpy array
-        the image, with subtraction applied
-    """
-    if axis == 0:
-        image[hpixel] = (image[hpixel - 1] + image[hpixel + 1]) / 2
-    else:
-        image[:, hpixel] = (image[:, hpixel - 1] + image[:, hpixel + 1]) / 2
-    return image
 
 
 n_events = 2000
@@ -59,7 +38,6 @@ roi1 = [[0, 388], [105, 124]]
 
 # data quality cuts
 fee_i0 = 1.0
-#ch2_i0 = 0.1
 ch2_i0 = 0.1
 
 # checking arguments
@@ -112,6 +90,9 @@ tags_i0 = np.array(i0.index.tolist())
 # getting a list of tags with the correct i0
 cond_mask = np.in1d(tags_i0[i0_mask], ipm0_tags[i0_ch2_mask])
 cond_tags = tags_i0[i0_mask][cond_mask]
+#selected I0
+i0_ch2_sel_mask = np.in1d(ipm0_tags[i0_ch2_mask], cond_tags)
+i0_ch2_sel = i0_ch2[i0_ch2_mask][i0_ch2_sel_mask]
 
 fee_tags_mask = fee_mask * np.in1d(fee_tags[:n_events], cond_tags, assume_unique=True)
 holy_tags = fee_tags[:n_events][fee_tags_mask]
@@ -145,6 +126,12 @@ cspad0_tags = results["tags"]
 
 # int64 conversion needed because of tags
 sase = fee_spectra_data[fee_tags_mask].astype(np.float64)
+
+# normalize sase, emission to I0
+sase = (sase.T / i0_ch2_sel).T
+cspad0_spectra = (cspad0_spectra.T / i0_ch2_sel).T
+
+# create the maps with the proper tags
 fee_map = np.insert(sase, 0,
                     fee_tags[fee_tags_mask].astype(np.int64), axis=1)
 cspad_map = np.insert(cspad0_spectra.astype(np.int64), 0,
