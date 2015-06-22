@@ -84,3 +84,36 @@ The `get_fee_spectrometer_response.py` script will plot normalized spectral dist
 
 Spectra are summed up, and then normalized to the sum of the `Ch2` I0 monitor: the envelope is retrieved performing a fit for the maximum of each spectra.
 
+## Retrieving id-wise SASE and emission maps
+
+`get_sase_emission_maps.py` will produce 2D maps of SASE and emission spectra in function of their id tags. Normalization to I0 can be enabled putting `normalize = True` at the beginning of the script. 
+
+The final output is composed of two .gz ASCII files:
+* runXXX_sase.gz, containing the sase spectra
+* runXXX_cspadY_emission.gz, containing the emission spectra
+
+In both files, the first column identifies the *tag*, and the following ones the pixels
+
+## Plotting basic quantities for the CsPad tiles
+
+`plt_cspad_tile.py` plots some basic quantities for the CsPad 140k detectors, before gluing the two tiles. It plots:
+* ADU histograms
+* Average image
+* Spectra
+ 
+
+## Plot emission spectra
+
+`plot_emission.py` will plot the emission spectra for both the CsPads. It can apply:
+* CsPad 140k glueing
+* Dark correction
+* Bad pixel correction
+* "fat pixel" correction
+* ADU thresolds
+* ROIs
+
+an example of how to compare multiple spectra is provided by `plot_multiple_emissions.py`
+
+## Plot Upstream / Downstream spectra
+
+`plot_spectrometers.py` plots both the upstream and downstream spectra, also with the average of images (if available)
