@@ -39,6 +39,9 @@ print "Running on file %s" %fname
 f = h5py.File(fname, 'r')
 calib_cycle = 0
 
+plot_fee_images = True
+plot_down_images = True
+
 # the root dataset
 main_dsetname = "/Configure:0000/Run:0000/CalibCycle:%04d/" % calib_cycle
 
@@ -49,9 +52,18 @@ image_label = "Run %d, Calib %d" % (run, calib_cycle)
 fee_spectr, fee_tags = xpp.get_data_with_tags(fname, dset_names["FEE_spectr_hproj"], calib_cycle=calib_cycle)
 fee_spectr = fee_spectr[:].astype('int32')
 #down_spectr, down_tags = xpp.get_data_with_tags(fname, dset_names["Downstream_spectr_img"] + "/image")
-fee_imgs = f[main_dsetname + dset_names["FEE_spectr_img"] + "/image"]
-down_imgs = f[main_dsetname + dset_names["Downstream_spectr_img"] + "/image"]
 
+try:
+    fee_imgs = f[main_dsetname + dset_names["FEE_spectr_img"] + "/image"]
+except:
+    print "[WARNING] Images for FEE spectrometer cannot be found"
+    plot_fee_images = False
+
+try:
+    down_imgs = f[main_dsetname + dset_names["Downstream_spectr_img"] + "/image"]
+except:
+    print "[WARNING] Images for Downstream spectrometer cannot be found"
+    plot_down_images = False
 
 # Starting the Images Processor for CsPad #0
 ip = ImagesProcessor()
@@ -97,8 +109,10 @@ plt.title("Downstream spectra sum, %s" % image_label)
 plt.plot(down_filtered.sum(axis=0))
 
 
-pu.plot_image_and_proj(fee_imgs[0], title=("FEE %s" % image_label))
-pu.plot_image_and_proj(down_imgs[1], title=("Downstream spectrometer %s" % image_label))
+if plot_fee_images:
+    pu.plot_image_and_proj(fee_imgs[0], title=("FEE %s" % image_label))
+if plot_down_images:
+    pu.plot_image_and_proj(down_imgs[1], title=("Downstream spectrometer %s" % image_label))
 
 #down_sp = results_down['get_projection']['spectra'][18]
 #fee_sp = results['get_projection']['spectra'][0]

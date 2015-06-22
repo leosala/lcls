@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import h5py
 import numpy as np
 
+from miscellanea import interpolate_pixel_hline
+
 import sys
 XPP_LIB = "../xpp/utilities/"
 sys.path.append(XPP_LIB)
@@ -33,7 +35,7 @@ roi0 = [[0, 388], [157, 168]]
 roi1 = [[0, 388], [165, 180]]
 
 # events to be analyzed
-n_events = 100
+n_events = 1000
 
 # ADU thresholds
 adu_low_thr_0 = 20.
@@ -66,6 +68,7 @@ ip.set_dataset(dset_main + dset_name)
 ip.add_preprocess("subtract_correction", args={'sub_image': dark0})
 ip.add_preprocess("set_thr", args={"thr_low": adu_low_thr_0})
 ip.add_preprocess("correct_bad_pixels", args={"mask": bad_pixel_mask0})
+ip.add_preprocess(interpolate_pixel_hline, args={"hpixel": 193})
 #ip.add_preprocess("set_roi", args={'roi': roi0})
 ip.add_analysis('get_mean_std')
 ip.add_analysis('get_histo_counts')
@@ -81,6 +84,7 @@ ip.set_dataset(dset_main + dset_name)
 ip.add_preprocess("subtract_correction", args={'sub_image': dark1})
 ip.add_preprocess("set_thr", args={"thr_low": adu_low_thr_1})
 ip.add_preprocess("correct_bad_pixels", args={"mask": bad_pixel_mask1})
+ip.add_preprocess(interpolate_pixel_hline, args={"hpixel": 193})
 #ip.add_preprocess("set_roi", args={'roi': roi1})
 ip.add_analysis('get_mean_std')
 ip.add_analysis('get_histo_counts')

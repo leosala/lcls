@@ -45,18 +45,29 @@ class Analysis(object):
         self.results = {}
 
 
-def images_iterator(images, chunk_size=1, mask=None):
+def images_iterator(images, chunk_size=1, mask=None, n_events=-1):
+    """Standard Iterator
+    ADD BLAH
+    """
     i = 0
-    if chunk_size >= images.shape[0]:
-        chunk_size = images.shape[0]
+    if n_events == -1:
+        n_events = images.shape[0] 
 
-    for i in range(0, images.shape[0], chunk_size):
-        end_i = min(i + chunk_size, images.shape[0])
+    if chunk_size >= n_events:
+        chunk_size = n_events
+
+    for i in range(0, n_events, chunk_size):
+        print "Processing event %d / %d" % (i, n_events)
+        end_i = min(i + chunk_size, n_events)
         if mask is not None:
-            idx = np.arange(images.shape[0])[mask]
-            dset = images[mask[i:end_i]]
+            idx = np.arange(n_events)[mask]
+            dset = images[i:end_i][mask[i:end_i]]
         else:
             dset = images[i:end_i]
+            if dset.shape[0] == 0:
+                yield None
+                continue
+
         for j in range(dset.shape[0]):
             yield dset[j]
 

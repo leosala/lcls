@@ -29,7 +29,11 @@ from images_processor import ImagesProcessor
 import xpp_utilities as xpp
 
 
-n_events = 2000
+# Normalize spectra with Ch2?
+normalize = True
+
+# number of events to be analyzed
+n_events = -1
 
 # CsPad ROIs 
 # from run 127 till run XXXX
@@ -128,10 +132,12 @@ cspad0_tags = results["tags"]
 sase = fee_spectra_data[fee_tags_mask].astype(np.float64)
 
 # normalize sase, emission to I0
-sase = (sase.T / i0_ch2_sel).T
-cspad0_spectra = (cspad0_spectra.T / i0_ch2_sel).T
+if normalize:
+    sase = (sase.T / i0_ch2_sel).T
+    cspad0_spectra = (cspad0_spectra.T / i0_ch2_sel).T
 
 # create the maps with the proper tags
+
 fee_map = np.insert(sase, 0,
                     fee_tags[fee_tags_mask].astype(np.int64), axis=1)
 cspad_map = np.insert(cspad0_spectra.astype(np.int64), 0,
@@ -139,8 +145,8 @@ cspad_map = np.insert(cspad0_spectra.astype(np.int64), 0,
 
 print "same tags?", (fee_tags[fee_tags_mask] == cspad0_tags).all()
 # dump maps in ASCII file
-np.savetxt("%s_sase.gz" % run, fee_map, header="#tags\tpixels")
-np.savetxt("%s_cspad1_emission.gz" % run, cspad_map, header="#tags\tpixels")
+np.savetxt("run%s_sase.gz" % run, fee_map, header="#tags\tpixels")
+np.savetxt("run%s_cspad1_emission.gz" % run, cspad_map, header="#tags\tpixels")
 
 # produce RIXS map
 #cspad0_spectra[cspad0_spectra < 0] = 0
