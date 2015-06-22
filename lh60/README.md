@@ -76,3 +76,11 @@ The script can be run with:
 python create_dark_badpixelmap.py <run_number>
 ```
 
+## Get the response of the FEE Spectrometer
+
+In order to do this, you need a scan of electron beam energies (in this case, runs 19-26, already hardcoded in the script).
+
+The `get_fee_spectrometer_response.py` script will plot normalized spectral distributions, and fit the envelope wiht a polynomial (which is printed in the output).
+
+Spectra are summed up, and then normalized to the sum of the `Ch2` I0 monitor: the envelope is retrieved performing a fit for the maximum of each spectra.
+
