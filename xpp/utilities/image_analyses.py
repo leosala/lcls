@@ -39,7 +39,7 @@ def get_projection(results, temp, image_in, axis=0, thr_hi=None, thr_low=None):
             results["spectra"] = np.empty((results['n_entries'], temp["image_shape"][other_axis]), dtype=np.int64) 
         elif temp["image_dtype"].name.find('float') !=-1:
             results["spectra"] = np.empty((results['n_entries'], temp["image_shape"][other_axis]), dtype=np.float64) 
-        print results["spectra"].shape, axis, other_axis, temp["image_shape"]
+        
     # if there is no image, return NaN
     if image_in is None:
         result = np.ones(temp["image_shape"][other_axis], dtype=temp["image_dtype"])

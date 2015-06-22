@@ -42,7 +42,7 @@ roi1 = [[0, 388], [105, 124]]
 
 # data quality cuts
 fee_i0 = 1.0
-ch2_i0 = 0.1
+ch2_i0 = 0.2
 
 # checking arguments
 if len(sys.argv) != 2:

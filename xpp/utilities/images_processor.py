@@ -315,7 +315,7 @@ class ImagesProcessor(object):
             print "[INFO] Setting a new dataset, removing stored preprocess functions. To overcome this, use remove_preprocess=False"
             self.remove_preprocess()
         
-    def analyze_images(self, fname, n=-1, tags=None):
+    def analyze_images(self, fname, n=-1, tags=None, chunk_size=1000):
         """Executes a loop, where the registered functions are applied to all the images
         
         Parameters
@@ -369,7 +369,6 @@ class ImagesProcessor(object):
             analysis.temp_arguments["image_dtype"] = None
 
         # loop on tags
-        chunk_size = 1000
         images_iter = self.images_iterator(dataset, chunk_size, tags_mask, n_events=n)
         
         for image_i, image in enumerate(images_iter):
